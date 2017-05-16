@@ -12,9 +12,8 @@ const (
 
 //Strategy represents a strategy to attach a bot on a market.
 type Strategy interface {
-	MarketName() string     //Represents the name of the market.
 	OnCandleUpdate() Action //Represents what to do when new data has been synced.
-	Setup()                 //Represents what to do when strategy is attached.
-	TearDown()              //Represents what to do when strategy is detached.
+	SetupStrategy()         //Represents what to do when strategy is attached.
+	TearDownStrategy()      //Represents what to do when strategy is detached.
 	//OnNewCandle() Action    //Represents what to do when new candle is added to the graph.
 }
