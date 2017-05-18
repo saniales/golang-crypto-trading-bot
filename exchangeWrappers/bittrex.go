@@ -48,3 +48,24 @@ func convertFromBittrexOrder(typo environment.OrderType, order bittrexAPI.Orderb
 		OrderNumber: "",
 	}
 }
+
+//convertFromBittrexMarketSummary converts a bittrex Market Summary to a environment.MarketSummary.
+func convertFromBittrexMarketSummary(summary []bittrexAPI.MarketSummary) environment.MarketSummary {
+	return environment.MarketSummary{
+		High:   summary[0].High,
+		Low:    summary[0].Low,
+		Volume: summary[0].Volume,
+		Bid:    summary[0].Bid,
+		Ask:    summary[0].Ask,
+		Last:   summary[0].Last,
+	}
+}
+
+//convertFromBittrexTicker converts a bittrex ticker to a environment.Ticker.
+func convertFromBittrexTicker(ticker bittrexAPI.Ticker) environment.Ticker {
+	return environment.Ticker{
+		Last: ticker.Last,
+		Bid:  ticker.Bid,
+		Ask:  ticker.Ask,
+	}
+}

@@ -9,9 +9,11 @@ type ExchangeWrapper interface {
 	//GetTicker(market environment.Market)                                                         //Gets a ticker for a market.
 	//GetSellBook(market environment.Market) ([]environment.Order, error)                          //Gets the sell(ASK) book of a market.
 	//GetBuyBook(market environment.Market) ([]environment.Order, error)                           //Gets the buy(BID) book of a market.
-	GetOrderBook(market environment.Market) error                                                  //Gets the order(ASK + BID) book of a market.
-	BuyLimit(market environment.Market, amount float64, limit float64) (environment.Order, error)  //performs a limit buy action.
-	BuyMarket(market environment.Market, amount float64) (environment.Order, error)                //performs a market buy action.
-	SellLimit(market environment.Market, amount float64, limit float64) (environment.Order, error) //performs a limit sell action.
-	SellMarket(market environment.Market, amount float64) (environment.Order, error)               //performs a market sell action.
+	GetTicker(market environment.Market) error                                          //Gets the updated ticker for a market.
+	GetMarketSummary(market environment.Market) error                                   //Gets the current market summary.
+	GetOrderBook(market environment.Market) error                                       //Gets the order(ASK + BID) book of a market.
+	BuyLimit(market environment.Market, amount float64, limit float64) (string, error)  //performs a limit buy action.
+	BuyMarket(market environment.Market, amount float64) (string, error)                //performs a market buy action.
+	SellLimit(market environment.Market, amount float64, limit float64) (string, error) //performs a limit sell action.
+	SellMarket(market environment.Market, amount float64) (string, error)               //performs a market sell action.
 }

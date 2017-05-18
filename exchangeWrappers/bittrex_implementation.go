@@ -92,15 +92,29 @@ func (wrapper BittrexWrapper) BuyMarket(market environment.Market, amount float6
 //performs a limit sell action.
 func (wrapper BittrexWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.bittrexAPI.SellLimit(market.Name, amount, limit)
-	return environment.Order{
-		OrderNumber: orderNumber,
-		Quantity:    amount,
-		Value:       limit,
-	}, err
+	return orderNumber, err
 }
 
 //performs a market sell action.
 func (wrapper BittrexWrapper) SellMarket(market environment.Market, amount float64) (string, error) {
 	orderNumber, err := wrapper.bittrexAPI.SellMarket(market.Name, amount)
 	return orderNumber, err
+}
+
+func (wrapper BittrexWrapper) GetTicker(market environment.Market) error {
+	bittrexTicker, err := wrapper.bittrexAPI.GetTicker(market.Name)
+	if err != nil {
+		return err
+	}
+	market.Summary.UpdateFromTicker(convertFromBittrexTicker(bittrexTicker))
+	return nil
+}
+
+func (wrapper BittrexWrapper) GetMarketSummary(market environment.Market) error {
+	bittrexSummary, err := wrapper.bittrexAPI.GetMarketSummary(market.Name)
+	if err != nil {
+		return err
+	}
+	market.Summary = convertFromBittrexMarketSummary(bittrexSummary)
+	return nil
 }
