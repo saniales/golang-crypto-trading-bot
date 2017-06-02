@@ -6,7 +6,7 @@ import (
 	"github.com/AlessandroSanino1994/gobot/environment"
 )
 
-//Gets all the markets info.
+// GetMarkets gets all the markets info.
 func (wrapper BittrexWrapper) GetMarkets() ([]environment.Market, error) {
 	bittrexMarkets, err := wrapper.bittrexAPI.GetMarkets()
 	if err != nil {
@@ -21,7 +21,7 @@ func (wrapper BittrexWrapper) GetMarkets() ([]environment.Market, error) {
 	return wrappedMarkets, nil
 }
 
-//Gets the candles of a market.
+// GetCandles gets the candles of a market.
 func (wrapper BittrexWrapper) GetCandles(market environment.Market, interval string) error {
 	bittrexCandles, err := wrapper.bittrexAPI.GetHisCandles(market.Name, interval)
 	candleInterval, err := time.ParseDuration(interval)
@@ -30,14 +30,11 @@ func (wrapper BittrexWrapper) GetCandles(market environment.Market, interval str
 	}
 	if market.WatchedChart == nil {
 		market.WatchedChart = &environment.CandleStickChart{
-			MarketName:   market.Name,
 			CandleSticks: make([]environment.CandleStick, len(bittrexCandles)),
 			CandlePeriod: candleInterval,
-			Volume:       0,
 			OrderBook:    nil,
 		}
 	} else {
-		market.WatchedChart.Volume = 0
 		market.WatchedChart.CandleSticks = make([]environment.CandleStick, len(bittrexCandles))
 		market.WatchedChart.CandlePeriod = candleInterval
 	}
@@ -45,13 +42,13 @@ func (wrapper BittrexWrapper) GetCandles(market environment.Market, interval str
 		return err
 	}
 	for i, candle := range bittrexCandles {
-		market.WatchedChart.Volume += candle.Volume
+		// market.WatchedChart.Volume += candle.Volume
 		market.WatchedChart.CandleSticks[i] = convertFromBittrexCandle(candle)
 	}
 	return nil
 }
 
-//Gets the order(ASK + BID) book of a market.
+// GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper BittrexWrapper) GetOrderBook(market environment.Market) error {
 	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(market.Name, "both", 100)
 	if err != nil {
@@ -60,7 +57,7 @@ func (wrapper BittrexWrapper) GetOrderBook(market environment.Market) error {
 
 	if market.WatchedChart == nil {
 		market.WatchedChart = &environment.CandleStickChart{
-			MarketName: market.Name,
+		// MarketName: market.Name,
 		}
 	} else {
 		market.WatchedChart.OrderBook = nil
@@ -77,30 +74,31 @@ func (wrapper BittrexWrapper) GetOrderBook(market environment.Market) error {
 	return nil
 }
 
-//performs a limit buy action.
+// BuyLimit performs a limit buy action.
 func (wrapper BittrexWrapper) BuyLimit(market environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.bittrexAPI.BuyLimit(market.Name, amount, limit)
 	return orderNumber, err
 }
 
-//performs a market buy action.
+// BuyMarket performs a market buy action.
 func (wrapper BittrexWrapper) BuyMarket(market environment.Market, amount float64) (string, error) {
 	orderNumber, err := wrapper.bittrexAPI.BuyMarket(market.Name, amount)
 	return orderNumber, err
 }
 
-//performs a limit sell action.
+// SellLimit performs a limit sell action.
 func (wrapper BittrexWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.bittrexAPI.SellLimit(market.Name, amount, limit)
 	return orderNumber, err
 }
 
-//performs a market sell action.
+// SellMarket performs a market sell action.
 func (wrapper BittrexWrapper) SellMarket(market environment.Market, amount float64) (string, error) {
 	orderNumber, err := wrapper.bittrexAPI.SellMarket(market.Name, amount)
 	return orderNumber, err
 }
 
+// GetTicker gets the updated ticker for a market.
 func (wrapper BittrexWrapper) GetTicker(market environment.Market) error {
 	bittrexTicker, err := wrapper.bittrexAPI.GetTicker(market.Name)
 	if err != nil {
@@ -110,6 +108,7 @@ func (wrapper BittrexWrapper) GetTicker(market environment.Market) error {
 	return nil
 }
 
+// GetMarketSummary gets the current market summary.
 func (wrapper BittrexWrapper) GetMarketSummary(market environment.Market) error {
 	bittrexSummary, err := wrapper.bittrexAPI.GetMarketSummary(market.Name)
 	if err != nil {

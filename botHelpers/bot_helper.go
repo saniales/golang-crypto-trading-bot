@@ -23,9 +23,9 @@ func InitArgs() (CommandLineOptions, error) {
 
 //InitExchange initialize a new ExchangeWrapper binded to the specified exchange provided.
 func InitExchange(exchangeConfig exchangeWrappers.ExchangeConfig) exchangeWrappers.ExchangeWrapper {
-	switch exchangeName {
+	switch exchangeConfig.ExchangeName {
 	case "bittrex":
-		return exchangeWrappers.NewBittrexWrapper(publicKey, secretKey)
+		return exchangeWrappers.NewBittrexWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
 	case "poloniex":
 		return nil
 	default:
@@ -37,6 +37,3 @@ func InitExchange(exchangeConfig exchangeWrappers.ExchangeConfig) exchangeWrappe
 func InitMarkets(exchange exchangeWrappers.ExchangeWrapper) ([]environment.Market, error) {
 	return exchange.GetMarkets()
 }
-
-//InitFromConfigFile
-func InitExchangesFromConfig()
