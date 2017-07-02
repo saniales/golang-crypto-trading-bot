@@ -23,38 +23,6 @@ func (wrapper BittrexWrapper) GetMarkets() ([]environment.Market, error) {
 	return wrappedMarkets, nil
 }
 
-// GetCandles gets the candles of a market.
-func (wrapper BittrexWrapper) GetCandles(market *environment.Market, interval string) error {
-	bittrexCandles, err := wrapper.bittrexAPI.GetHisCandles(market.Name, interval)
-	if err != nil {
-		return err
-	}
-	/*
-		candleInterval, err := time.ParseDuration(interval)
-		if err != nil {
-			return err
-		}
-	*/
-	if market.WatchedChart == nil {
-		market.WatchedChart = &environment.CandleStickChart{
-			CandleSticks: make([]environment.CandleStick, len(bittrexCandles)),
-			//CandlePeriod: candleInterval,
-			OrderBook: nil,
-		}
-	} else {
-		market.WatchedChart.CandleSticks = make([]environment.CandleStick, len(bittrexCandles))
-		//market.WatchedChart.CandlePeriod = candleInterval
-	}
-	if err != nil {
-		return err
-	}
-	for i, candle := range bittrexCandles {
-		// market.WatchedChart.Volume += candle.Volume
-		market.WatchedChart.CandleSticks[i] = convertFromBittrexCandle(candle)
-	}
-	return nil
-}
-
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) error {
 	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(market.Name, "both", 100)
