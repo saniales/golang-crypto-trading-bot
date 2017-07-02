@@ -3,7 +3,3 @@ go:
  - 1.8.3
  - master
 
-script:
- - go get
- - go build
- - go test
