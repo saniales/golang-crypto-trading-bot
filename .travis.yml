@@ -1,3 +1,9 @@
 language: go
 
+go:
+  - 1.8
+
 go_import_path: github.com/AlessandroSanino1994/golang-crypto-trading-bot
+
+before_install: 
+  go get 
