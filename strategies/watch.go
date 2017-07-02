@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/AlessandroSanino1994/gobot/environment"
-	"github.com/AlessandroSanino1994/gobot/exchangeWrappers"
+	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/environment"
+	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/exchangeWrappers"
 )
 
 func init() {

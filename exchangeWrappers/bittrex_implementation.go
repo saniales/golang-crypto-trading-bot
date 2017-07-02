@@ -3,7 +3,7 @@ package exchangeWrappers
 import (
 	"fmt"
 
-	"github.com/AlessandroSanino1994/gobot/environment"
+	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/environment"
 
 	bittrexAPI "github.com/toorop/go-bittrex"
 )

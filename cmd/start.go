@@ -21,10 +21,10 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/AlessandroSanino1994/gobot/botHelpers"
-	"github.com/AlessandroSanino1994/gobot/environment"
-	"github.com/AlessandroSanino1994/gobot/exchangeWrappers"
-	"github.com/AlessandroSanino1994/gobot/strategies"
+	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/botHelpers"
+	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/environment"
+	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/exchangeWrappers"
+	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/strategies"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )

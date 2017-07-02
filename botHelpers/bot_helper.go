@@ -1,8 +1,8 @@
 package botHelpers
 
 import (
-	"github.com/AlessandroSanino1994/gobot/environment"
-	"github.com/AlessandroSanino1994/gobot/exchangeWrappers"
+	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/environment"
+	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/exchangeWrappers"
 )
 
 //InitExchange initialize a new ExchangeWrapper binded to the specified exchange provided.

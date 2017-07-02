@@ -1,6 +1,6 @@
 package exchangeWrappers
 
-import "github.com/AlessandroSanino1994/gobot/environment"
+import "github.com/AlessandroSanino1994/golang-crypto-trading-bot/environment"
 
 //ExchangeWrapper provides a generic wrapper for exchange services.
 type ExchangeWrapper interface {
