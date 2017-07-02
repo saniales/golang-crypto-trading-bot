@@ -1,9 +1,11 @@
 package exchangeWrappers
 
 import (
-	"time"
+	"fmt"
 
 	"github.com/AlessandroSanino1994/gobot/environment"
+
+	bittrexAPI "github.com/toorop/go-bittrex"
 )
 
 // GetMarkets gets all the markets info.
@@ -22,21 +24,26 @@ func (wrapper BittrexWrapper) GetMarkets() ([]environment.Market, error) {
 }
 
 // GetCandles gets the candles of a market.
-func (wrapper BittrexWrapper) GetCandles(market environment.Market, interval string) error {
+func (wrapper BittrexWrapper) GetCandles(market *environment.Market, interval string) error {
 	bittrexCandles, err := wrapper.bittrexAPI.GetHisCandles(market.Name, interval)
-	candleInterval, err := time.ParseDuration(interval)
 	if err != nil {
 		return err
 	}
+	/*
+		candleInterval, err := time.ParseDuration(interval)
+		if err != nil {
+			return err
+		}
+	*/
 	if market.WatchedChart == nil {
 		market.WatchedChart = &environment.CandleStickChart{
 			CandleSticks: make([]environment.CandleStick, len(bittrexCandles)),
-			CandlePeriod: candleInterval,
-			OrderBook:    nil,
+			//CandlePeriod: candleInterval,
+			OrderBook: nil,
 		}
 	} else {
 		market.WatchedChart.CandleSticks = make([]environment.CandleStick, len(bittrexCandles))
-		market.WatchedChart.CandlePeriod = candleInterval
+		//market.WatchedChart.CandlePeriod = candleInterval
 	}
 	if err != nil {
 		return err
@@ -49,7 +56,7 @@ func (wrapper BittrexWrapper) GetCandles(market environment.Market, interval str
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper BittrexWrapper) GetOrderBook(market environment.Market) error {
+func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) error {
 	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(market.Name, "both", 100)
 	if err != nil {
 		return err
@@ -99,7 +106,7 @@ func (wrapper BittrexWrapper) SellMarket(market environment.Market, amount float
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper BittrexWrapper) GetTicker(market environment.Market) error {
+func (wrapper BittrexWrapper) GetTicker(market *environment.Market) error {
 	bittrexTicker, err := wrapper.bittrexAPI.GetTicker(market.Name)
 	if err != nil {
 		return err
@@ -109,11 +116,77 @@ func (wrapper BittrexWrapper) GetTicker(market environment.Market) error {
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper BittrexWrapper) GetMarketSummary(market environment.Market) error {
+func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) error {
 	bittrexSummary, err := wrapper.bittrexAPI.GetMarketSummary(market.Name)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("%v", bittrexSummary[0])
 	market.Summary = convertFromBittrexMarketSummary(bittrexSummary)
 	return nil
+}
+
+//package github.com/toorop/go-bittrex
+//refer to https://github.com/toorop/go-bittrex/blob/master/examples/bittrex.go
+
+//BittrexWrapper provides a Generic wrapper of the Bittrex API.
+type BittrexWrapper struct {
+	bittrexAPI *bittrexAPI.Bittrex //Represents the helper of the Bittrex API.
+}
+
+//NewBittrexWrapper creates a generic wrapper of the bittrex API.
+func NewBittrexWrapper(publicKey string, secretKey string) ExchangeWrapper {
+	return BittrexWrapper{
+		bittrexAPI: bittrexAPI.New(publicKey, secretKey),
+	}
+}
+
+//convertFromBittrexMarket converts a bittrex market to a environment.Market.
+func convertFromBittrexMarket(market bittrexAPI.Market) environment.Market {
+	return environment.Market{
+		Name:           market.MarketName,
+		BaseCurrency:   market.BaseCurrency,
+		MarketCurrency: market.MarketCurrency,
+	}
+}
+
+//convertFromBittrexCandle converts a bittrex candle to a environment.CandleStick.
+func convertFromBittrexCandle(candle bittrexAPI.Candle) environment.CandleStick {
+	return environment.CandleStick{
+		High:  candle.High,
+		Open:  candle.Open,
+		Close: candle.Close,
+		Low:   candle.Low,
+	}
+}
+
+//convertFromBittrexOrder converts a bittrex order to a environment.Order.
+func convertFromBittrexOrder(typo environment.OrderType, order bittrexAPI.Orderb) environment.Order {
+	return environment.Order{
+		Type:        typo,
+		Quantity:    order.Quantity,
+		Value:       order.Rate,
+		OrderNumber: "",
+	}
+}
+
+//convertFromBittrexMarketSummary converts a bittrex Market Summary to a environment.MarketSummary.
+func convertFromBittrexMarketSummary(summary []bittrexAPI.MarketSummary) environment.MarketSummary {
+	return environment.MarketSummary{
+		High:   summary[0].High,
+		Low:    summary[0].Low,
+		Volume: summary[0].Volume,
+		Bid:    summary[0].Bid,
+		Ask:    summary[0].Ask,
+		Last:   summary[0].Last,
+	}
+}
+
+//convertFromBittrexTicker converts a bittrex ticker to a environment.Ticker.
+func convertFromBittrexTicker(ticker bittrexAPI.Ticker) environment.Ticker {
+	return environment.Ticker{
+		Last: ticker.Last,
+		Bid:  ticker.Bid,
+		Ask:  ticker.Ask,
+	}
 }

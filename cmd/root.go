@@ -16,16 +16,20 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-var cfgFile string
+const (
+	versionNumber = "0.0.1-pre-alpha"
+)
 
 //GlobalFlags provides flag definitions valid for the whole system.
 var GlobalFlags struct {
-	Verbose bool //Tells the program to print everything to screen.
+	Verbose    int    //Tells the program to print everything to screen (used multiple times for better verbosity).
+	ConfigFile string //Config file path (assumed ./.gobot if not specified)
 }
 
 //rootFlags provides flag definitions valid for root command.
@@ -38,19 +42,28 @@ var RootCmd = &cobra.Command{
 	Use:   "gobot",
 	Short: "USAGE gobot [OPTIONS].",
 	Long:  `USAGE gobot [OPTIONS] : see --help for details`,
+	Run:   executeRootCommand,
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		//fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
 func init() {
-	RootCmd.PersistentFlags().BoolVar(&GlobalFlags.Verbose, "verbose", false, "show verbose information (default = false) when trading.")
+	RootCmd.PersistentFlags().CountVarP(&GlobalFlags.Verbose, "verbose", "v", "show verbose information when trading : use multiple times to increase verbosity level.")
 
-	RootCmd.Flags().BoolVar(&rootFlags.Version, "version", false, "show version information (default = false).")
+	RootCmd.Flags().BoolVarP(&rootFlags.Version, "version", "V", false, "show version information.")
+	RootCmd.PersistentFlags().StringVar(&GlobalFlags.ConfigFile, "config-file", "./.gobot", "Config file path (default : ./.gobot)")
+}
+
+func executeRootCommand(cmd *cobra.Command, args []string) {
+	if rootFlags.Version {
+		fmt.Printf("gobot v. %s\n", versionNumber)
+	} else {
+		cmd.Help()
+	}
 }

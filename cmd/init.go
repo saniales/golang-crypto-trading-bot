@@ -61,7 +61,7 @@ func initConfig() {
 		content, err := ioutil.ReadFile(initFlags.ConfigFile)
 		if err != nil {
 			fmt.Print("Error while opening the config file provided")
-			if GlobalFlags.Verbose {
+			if GlobalFlags.Verbose > 0 {
 				fmt.Printf(": %s", err.Error())
 			}
 			fmt.Println()
@@ -71,7 +71,7 @@ func initConfig() {
 		err = yaml.Unmarshal(content, &checker)
 		if err != nil {
 			fmt.Print("Cannot load provided configuration file")
-			if GlobalFlags.Verbose {
+			if GlobalFlags.Verbose > 0 {
 				fmt.Printf(": %s", err.Error())
 			}
 			fmt.Println()
@@ -80,7 +80,7 @@ func initConfig() {
 		err = ioutil.WriteFile("./.gobot", content, 0666)
 		if err != nil {
 			fmt.Print("Cannot write new configuration file")
-			if GlobalFlags.Verbose {
+			if GlobalFlags.Verbose > 0 {
 				fmt.Printf(": %s", err.Error())
 			}
 			fmt.Println()
@@ -109,7 +109,7 @@ func generateInitFile() {
 		if YesNo == "n" {
 			break
 		}
-		var tempStrategyAppliance environment.StrategyAppliance
+		var tempStrategyAppliance environment.StrategyConfig
 		fmt.Println("Please Enter Market Name using short notation " +
 			"(e.g. BTC-ETH for a Bitcoin-Ethereum market).")
 		fmt.Scanln(&tempStrategyAppliance.Market)
@@ -123,7 +123,7 @@ func generateInitFile() {
 	contentToBeWritten, err := yaml.Marshal(configs)
 	if err != nil {
 		fmt.Print("Error while creating the content for the new config file")
-		if GlobalFlags.Verbose {
+		if GlobalFlags.Verbose > 0 {
 			fmt.Printf(": %s", err.Error())
 		}
 		fmt.Println()
@@ -141,7 +141,7 @@ func generateInitFile() {
 		err := ioutil.WriteFile("./.gobot", contentToBeWritten, 0666)
 		if err != nil {
 			fmt.Print("Error while writing content to new config file")
-			if GlobalFlags.Verbose {
+			if GlobalFlags.Verbose > 0 {
 				fmt.Printf(": %s", err.Error())
 			}
 			fmt.Println()
