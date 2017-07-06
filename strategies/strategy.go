@@ -28,12 +28,11 @@ const (
 // All represents all strategies built into the system.
 var strategies map[string]Strategy
 
-func init() {
-	strategies = make(map[string]Strategy)
-}
-
 // AddStrategy adds a strategy to the strategies set.
 func AddStrategy(strat Strategy) {
+	if strategies == nil {
+		strategies = make(map[string]Strategy)
+	}
 	strategies[strat.Name()] = strat
 }
 

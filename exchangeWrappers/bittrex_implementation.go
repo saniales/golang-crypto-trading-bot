@@ -81,13 +81,14 @@ func (wrapper BittrexWrapper) GetTicker(market *environment.Market) error {
 	return nil
 }
 
+// GetMarketSummaries get the markets summary of all markets
 func (wrapper BittrexWrapper) GetMarketSummaries(markets map[string]*environment.Market) error {
 	bittrexSummaries, err := wrapper.bittrexAPI.GetMarketSummaries()
 	if err != nil {
 		return err
 	}
 	for _, summary := range bittrexSummaries {
-		markets[summary.MarketName].Summary = convertFromBittrexMarketSummary([]bittrexAPI.MarketSummary{summary})
+		markets[summary.MarketName].Summary = convertFromBittrexMarketSummary(summary)
 	}
 	return nil
 }
@@ -99,7 +100,7 @@ func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) error
 		return err
 	}
 
-	market.Summary = convertFromBittrexMarketSummary(bittrexSummary)
+	market.Summary = convertFromBittrexMarketSummary(bittrexSummary[0])
 	return nil
 }
 
@@ -148,14 +149,14 @@ func convertFromBittrexOrder(typo environment.OrderType, order bittrexAPI.Orderb
 }
 
 //convertFromBittrexMarketSummary converts a bittrex Market Summary to a environment.MarketSummary.
-func convertFromBittrexMarketSummary(summary []bittrexAPI.MarketSummary) environment.MarketSummary {
+func convertFromBittrexMarketSummary(summary bittrexAPI.MarketSummary) environment.MarketSummary {
 	return environment.MarketSummary{
-		High:   summary[0].High,
-		Low:    summary[0].Low,
-		Volume: summary[0].Volume,
-		Bid:    summary[0].Bid,
-		Ask:    summary[0].Ask,
-		Last:   summary[0].Last,
+		High:   summary.High,
+		Low:    summary.Low,
+		Volume: summary.Volume,
+		Bid:    summary.Bid,
+		Ask:    summary.Ask,
+		Last:   summary.Last,
 	}
 }
 

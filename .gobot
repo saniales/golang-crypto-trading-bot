@@ -4,4 +4,4 @@ exchange_config:
   secret_key: 13811a67a71d42bc966fe6a6d7e35028
 strategies:
 - market: BTC-XVG
-  strategy: WatchEvery5Minutes
+  strategy: JSONWatchEvery5Minutes
