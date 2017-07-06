@@ -106,12 +106,6 @@ func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string
 		defer strategy.TearDownStrategy(wrapper, market)
 	}
 
-	//Initialize cron jobs
-
-	//attach strategies
-
-	//TODO : handle panic
-
 	for {
 		if len(tactics) == 0 {
 			return errors.New("No available strategy")

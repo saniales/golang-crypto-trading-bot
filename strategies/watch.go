@@ -19,7 +19,7 @@ func init() {
 		RefreshInterval: time.Minute * 30,
 	})
 	AddStrategy(WatchStrategy{
-		Label:           "WatchEvery5Min",
+		Label:           "WatchEvery5Minutes",
 		RefreshInterval: time.Minute * 5,
 	})
 }
@@ -45,6 +45,7 @@ func (w WatchStrategy) OnCandleUpdate(wrapper exchangeWrappers.ExchangeWrapper, 
 	if w.delayFirstCycle {
 		time.Sleep(w.RefreshInterval)
 	}
+	fmt.Println(w.delayFirstCycle)
 	w.delayFirstCycle = true
 	err := wrapper.GetMarketSummary(&market)
 	if err != nil {
