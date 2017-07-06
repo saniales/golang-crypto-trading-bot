@@ -1,20 +1,18 @@
 package exchangeWrappers
 
 import (
-	"fmt"
-
 	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/environment"
 
 	bittrexAPI "github.com/toorop/go-bittrex"
 )
 
 // GetMarkets gets all the markets info.
-func (wrapper BittrexWrapper) GetMarkets() ([]environment.Market, error) {
+func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 	bittrexMarkets, err := wrapper.bittrexAPI.GetMarkets()
 	if err != nil {
 		return nil, err
 	}
-	wrappedMarkets := make([]environment.Market, 0, len(bittrexMarkets))
+	wrappedMarkets := make([]*environment.Market, 0, len(bittrexMarkets))
 	for _, market := range bittrexMarkets {
 		if market.IsActive {
 			wrappedMarkets = append(wrappedMarkets, convertFromBittrexMarket(market))
@@ -83,13 +81,24 @@ func (wrapper BittrexWrapper) GetTicker(market *environment.Market) error {
 	return nil
 }
 
+func (wrapper BittrexWrapper) GetMarketSummaries(markets map[string]*environment.Market) error {
+	bittrexSummaries, err := wrapper.bittrexAPI.GetMarketSummaries()
+	if err != nil {
+		return err
+	}
+	for _, summary := range bittrexSummaries {
+		markets[summary.MarketName].Summary = convertFromBittrexMarketSummary([]bittrexAPI.MarketSummary{summary})
+	}
+	return nil
+}
+
 // GetMarketSummary gets the current market summary.
 func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) error {
 	bittrexSummary, err := wrapper.bittrexAPI.GetMarketSummary(market.Name)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%v", bittrexSummary[0])
+
 	market.Summary = convertFromBittrexMarketSummary(bittrexSummary)
 	return nil
 }
@@ -110,8 +119,8 @@ func NewBittrexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 }
 
 //convertFromBittrexMarket converts a bittrex market to a environment.Market.
-func convertFromBittrexMarket(market bittrexAPI.Market) environment.Market {
-	return environment.Market{
+func convertFromBittrexMarket(market bittrexAPI.Market) *environment.Market {
+	return &environment.Market{
 		Name:           market.MarketName,
 		BaseCurrency:   market.BaseCurrency,
 		MarketCurrency: market.MarketCurrency,

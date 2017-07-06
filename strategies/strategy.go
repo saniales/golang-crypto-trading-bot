@@ -44,8 +44,8 @@ func Get(name string) Strategy {
 
 //Strategy represents a strategy to attach a bot on a market.
 type Strategy interface {
-	Name() string                                                                                          // Returns the name of the strategy.                                                                       // Returns the refresh time, used to refresh data at duration tick.
-	OnCandleUpdate(exchangeWrappers.ExchangeWrapper, environment.Market) (Action, float64, float64, error) // OnCandleUpdate represents what to do when new data has been synced.
-	SetUpStrategy(exchangeWrappers.ExchangeWrapper, environment.Market) error                              // SetUpStrategy represents what to do when strategy is attached.
-	TearDownStrategy(exchangeWrappers.ExchangeWrapper, environment.Market) error                           // TearDownStrategy represents what to do when strategy is detached.
+	Name() string                                                                                           // Returns the name of the strategy.                                                                       // Returns the refresh time, used to refresh data at duration tick.
+	OnCandleUpdate(exchangeWrappers.ExchangeWrapper, *environment.Market) (Action, float64, float64, error) // OnCandleUpdate represents what to do when new data has been synced.
+	SetUpStrategy(exchangeWrappers.ExchangeWrapper, *environment.Market) error                              // SetUpStrategy represents what to do when strategy is attached.
+	TearDownStrategy(exchangeWrappers.ExchangeWrapper, *environment.Market) error                           // TearDownStrategy represents what to do when strategy is detached.
 }

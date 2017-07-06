@@ -93,7 +93,7 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 	}
 }
 
-func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string]environment.Market, tactics map[string]strategies.Strategy) error {
+func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string]*environment.Market, tactics map[string]strategies.Strategy) error {
 	for marketName, strategy := range tactics {
 		market := markets[marketName]
 		if strategy.SetUpStrategy(wrapper, market) != nil {
@@ -116,13 +116,12 @@ func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string
 			if err != nil {
 				fmt.Printf("Error while performing tactic %s in market %s : %s \nstopping that strategy...\n", strategy.Name(), marketName, err)
 				delete(tactics, marketName)
-				continue
+			} else {
+				err = applyAction(wrapper, *market, action, amount, limit)
+				if err != nil {
+					fmt.Printf("Error while applying action : strategy %s on market %s, action was %d", strategy.Name(), marketName, action)
+				}
 			}
-			err = applyAction(wrapper, market, action, amount, limit)
-			if err != nil {
-				fmt.Printf("Error while applying action : strategy %s on market %s, action was %d", strategy.Name(), marketName, action)
-			}
-
 		}
 	}
 }
