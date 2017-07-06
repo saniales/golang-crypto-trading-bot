@@ -26,16 +26,26 @@ const (
 )
 
 // All represents all strategies built into the system.
-var All map[string]Strategy
+var strategies map[string]Strategy
 
 func init() {
-	All = make(map[string]Strategy)
+	strategies = make(map[string]Strategy)
+}
+
+// AddStrategy adds a strategy to the strategies set.
+func AddStrategy(strat Strategy) {
+	strategies[strat.Name()] = strat
+}
+
+// Get returns a strategy with the specified name.
+func Get(name string) Strategy {
+	return strategies[name]
 }
 
 //Strategy represents a strategy to attach a bot on a market.
 type Strategy interface {
-	Name() string                                                                                                         // Returns the name of the strategy.
-	OnCandleUpdate(wrapper exchangeWrappers.ExchangeWrapper, market environment.Market) (Action, float64, float64, error) // OnCandleUpdate represents what to do when new data has been synced.
-	SetUpStrategy(wrapper exchangeWrappers.ExchangeWrapper, market environment.Market) error                              // SetUpStrategy represents what to do when strategy is attached.
-	TearDownStrategy(wrapper exchangeWrappers.ExchangeWrapper, market environment.Market) error                           // TearDownStrategy represents what to do when strategy is detached.
+	Name() string                                                                                          // Returns the name of the strategy.                                                                       // Returns the refresh time, used to refresh data at duration tick.
+	OnCandleUpdate(exchangeWrappers.ExchangeWrapper, environment.Market) (Action, float64, float64, error) // OnCandleUpdate represents what to do when new data has been synced.
+	SetUpStrategy(exchangeWrappers.ExchangeWrapper, environment.Market) error                              // SetUpStrategy represents what to do when strategy is attached.
+	TearDownStrategy(exchangeWrappers.ExchangeWrapper, environment.Market) error                           // TearDownStrategy represents what to do when strategy is detached.
 }

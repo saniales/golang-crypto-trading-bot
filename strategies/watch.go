@@ -10,27 +10,42 @@ import (
 )
 
 func init() {
-	All["watch"] = WatchStrategy{RefreshEvery: "hour"}
+	AddStrategy(WatchStrategy{
+		Label:           "WatchEveryHour",
+		RefreshInterval: time.Hour,
+	})
+	AddStrategy(WatchStrategy{
+		Label:           "WatchEvery30Minutes",
+		RefreshInterval: time.Minute * 30,
+	})
+	AddStrategy(WatchStrategy{
+		Label:           "WatchEvery5Min",
+		RefreshInterval: time.Minute * 5,
+	})
 }
 
 // WatchStrategy represents a strategy which does nothing than print
 // what it gets from markets.
 type WatchStrategy struct {
-	RefreshEvery string // Interval represents how often summaries will be requested.
+	Label           string        // The Label used to name the strategy.
+	RefreshInterval time.Duration // Interval represents how often summaries will be requested.
+	delayFirstCycle bool          // Tells if the strategy has just been initialized and is started. If true the first cycle will be delayed of time expressed by RefreshInterval variable.
 }
 
 // Name returns the name of the strategy.
 func (w WatchStrategy) Name() string {
-	return "Watch"
-}
-
-// RefreshInterval represents how often summaries will be requested.
-func (w WatchStrategy) RefreshInterval() (time.Duration, error) {
-	return time.ParseDuration(w.RefreshEvery)
+	if w.Label == "" {
+		return "Watch"
+	}
+	return w.Label
 }
 
 // OnCandleUpdate Prints info about markets on every candle tick in JSON format.
 func (w WatchStrategy) OnCandleUpdate(wrapper exchangeWrappers.ExchangeWrapper, market environment.Market) (Action, float64, float64, error) {
+	if w.delayFirstCycle {
+		time.Sleep(w.RefreshInterval)
+	}
+	w.delayFirstCycle = true
 	err := wrapper.GetMarketSummary(&market)
 	if err != nil {
 		return Invalid, -1, -1, err

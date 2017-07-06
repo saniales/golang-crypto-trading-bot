@@ -82,7 +82,7 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 	tactics := make(map[string]strategies.Strategy, len(botConfig.Strategies))
 
 	for _, strategyConf := range botConfig.Strategies {
-		tactics[strategyConf.Market] = strategies.All[strategyConf.Strategy]
+		tactics[strategyConf.Market] = strategies.Get(strategyConf.Strategy)
 	}
 
 	err = executeBotLoop(exchangeWrapper, markets, tactics)
@@ -101,8 +101,16 @@ func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string
 			delete(tactics, marketName)
 			continue
 		}
+		//timer := time.NewTicker(time.Minute)
+
 		defer strategy.TearDownStrategy(wrapper, market)
 	}
+
+	//Initialize cron jobs
+
+	//attach strategies
+
+	//TODO : handle panic
 
 	for {
 		if len(tactics) == 0 {
@@ -120,6 +128,7 @@ func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string
 			if err != nil {
 				fmt.Printf("Error while applying action : strategy %s on market %s, action was %d", strategy.Name(), marketName, action)
 			}
+
 		}
 	}
 }
