@@ -12,6 +12,10 @@ func InitExchange(exchangeConfig environment.ExchangeConfig) exchangeWrappers.Ex
 		return exchangeWrappers.NewBittrexWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
 	case "poloniex":
 		return nil
+	case "yobit":
+		return nil
+	case "cryptopia":
+		return nil
 	default:
 		return nil
 	}

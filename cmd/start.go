@@ -13,10 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package cmd
+package bot
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -66,33 +65,44 @@ func initConfigs() error {
 }
 
 func executeStartCommand(cmd *cobra.Command, args []string) {
+	fmt.Print("Getting configurations ... ")
 	if err := initConfigs(); err != nil {
 		fmt.Println("Cannot read from configuration file, please create or replace the current one using gobot init")
 		return
 	}
+	fmt.Println("DONE")
 
+	fmt.Print("Getting exchange info ... ")
 	exchangeWrapper := botHelpers.InitExchange(botConfig.Exchange)
+	fmt.Println("DONE")
 
+	fmt.Print("Getting markets cold info ... ")
 	markets, err := botHelpers.InitMarkets(exchangeWrapper)
 	if err != nil {
-		fmt.Printf("Cannot initialize Markets data : %s\n", err)
+		fmt.Println("Cannot initialize Markets data :", err)
 		return
 	}
+	fmt.Println("DONE")
 
-	tactics := make(map[string]strategies.Strategy, len(botConfig.Strategies))
-
+	fmt.Print("Getting markets cold info ... ")
 	for _, strategyConf := range botConfig.Strategies {
-		tactics[strategyConf.Market] = strategies.Get(strategyConf.Strategy)
+		err := strategies.MatchWithMarket(strategyConf.Strategy, markets[strategyConf.Market])
+		if err != nil {
+			fmt.Println("Cannot add tactic : ", err)
+		}
 	}
+	fmt.Println("DONE")
 
-	err = executeBotLoop(exchangeWrapper, markets, tactics)
-	if err != nil {
-		fmt.Printf("Bot exited with an error : %s\n", err)
-	} else {
-		fmt.Println("Bot exited gracefully")
-	}
+	fmt.Println("Starting bot ... ")
+	executeBotLoop(exchangeWrapper)
+	fmt.Println("EXIT, good bye :)")
 }
 
+func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper) {
+	strategies.ApplyAllStrategies(wrapper)
+}
+
+/*
 func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string]*environment.Market, tactics map[string]strategies.Strategy) error {
 	for marketName, strategy := range tactics {
 		market := markets[marketName]
@@ -125,6 +135,7 @@ func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string
 		}
 	}
 }
+
 
 func applyAction(wrapper exchangeWrappers.ExchangeWrapper, market environment.Market, action strategies.Action, amount float64, limit float64) error {
 	switch action {
@@ -182,3 +193,4 @@ func applyAction(wrapper exchangeWrappers.ExchangeWrapper, market environment.Ma
 	}
 	return nil
 }
+*/
