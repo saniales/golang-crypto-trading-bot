@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/environment"
-	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/exchangeWrappers"
+	"github.com/saniales/golang-crypto-trading-bot/environment"
+	"github.com/saniales/golang-crypto-trading-bot/exchangeWrappers"
 )
 
 var available map[string]Strategy                   //mapped name -> strategy

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/environment"
-	"github.com/AlessandroSanino1994/golang-crypto-trading-bot/exchangeWrappers"
+	"github.com/saniales/golang-crypto-trading-bot/environment"
+	"github.com/saniales/golang-crypto-trading-bot/exchangeWrappers"
 )
 
 // Watch5Min prints out the info of the market every 5 minutes.

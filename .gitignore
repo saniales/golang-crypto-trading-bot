@@ -24,3 +24,4 @@ _testmain.go
 *.prof
 
 golang-crypto-trading-bot
+vendor/
