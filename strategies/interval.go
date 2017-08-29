@@ -28,20 +28,20 @@ func (is IntervalStrategy) Apply(wrapper exchangeWrappers.ExchangeWrapper, marke
 	var err error
 	if is.model.Setup != nil {
 		err = is.model.Setup(wrapper, market)
-		if err != nil {
+		if err != nil && is.model.OnError != nil {
 			is.model.OnError(err)
 		}
 	}
 	for err == nil {
 		err = is.model.OnUpdate(wrapper, market)
-		if err != nil {
+		if err != nil && is.model.OnError != nil {
 			is.model.OnError(err)
 		}
 		time.Sleep(is.Interval)
 	}
 	if is.model.TearDown != nil {
 		err = is.model.TearDown(wrapper, market)
-		if err != nil {
+		if err != nil && is.model.OnError != nil {
 			is.model.OnError(err)
 		}
 	}
