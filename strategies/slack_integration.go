@@ -32,9 +32,7 @@ var slackIntegrationExample = IntervalStrategy{
 			_, _, err := bot.Client.PostMessage("DESIRED-CHANNEL", "OMG something happening!!!!!", slack.PostMessageParameters{})
 			return err
 		},
-		OnError: func(err error) {
-			//log
-		},
+		//OnError: nil, Handled by bot.Err, can be added if there are other handlers outside the bot for clarity.
 	},
 	Interval: time.Second * 10,
 }
