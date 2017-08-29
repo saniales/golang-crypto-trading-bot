@@ -5,11 +5,9 @@ import (
 	"time"
 
 	"github.com/nlopes/slack"
-
-	"github.com/shomali11/slacker"
-
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchangeWrappers"
+	"github.com/shomali11/slacker"
 )
 
 var bot *slacker.Slacker
