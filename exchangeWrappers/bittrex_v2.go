@@ -8,11 +8,17 @@ import (
 )
 
 // BittrexWrapperV2 wraps Bittrex API v2.0
-type BittrexWrapperV2 struct{}
+type BittrexWrapperV2 struct {
+	PublicKey string
+	SecretKey string
+}
 
 // NewBittrexV2Wrapper creates a generic wrapper of the bittrex API v2.0.
-func NewBittrexV2Wrapper() ExchangeWrapper {
-	return BittrexWrapperV2{}
+func NewBittrexV2Wrapper(PublicKey string, SecretKey string) ExchangeWrapper {
+	return BittrexWrapperV2{
+		PublicKey: PublicKey,
+		SecretKey: SecretKey,
+	}
 }
 
 // GetMarkets gets all the markets info.
