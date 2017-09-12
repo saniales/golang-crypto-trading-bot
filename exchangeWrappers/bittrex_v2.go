@@ -10,6 +10,11 @@ import (
 // BittrexWrapperV2 wraps Bittrex API v2.0
 type BittrexWrapperV2 struct{}
 
+// NewBittrexV2Wrapper creates a generic wrapper of the bittrex API v2.0.
+func NewBittrexV2Wrapper() ExchangeWrapper {
+	return BittrexWrapperV2{}
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper BittrexWrapperV2) GetMarkets() ([]*environment.Market, error) {
 	bittrexMarkets, err := bittrex.GetMarkets()
@@ -78,18 +83,19 @@ func (wrapper BittrexWrapperV2) BuyMarket(market environment.Market, amount floa
 
 // SellLimit performs a limit sell action.
 func (wrapper BittrexWrapperV2) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
+	return "", errors.New("SellLimit not implemented")
+	/*
+		orderNumber, err := wrapper.bittrexAPI.SellLimit(market.Name, amount, limit)
+		return orderNumber, err
+	*/
+}
+
+// SellMarket performs a market sell action.
+func (wrapper BittrexWrapperV2) SellMarket(market environment.Market, amount float64) (string, error) {
 	return "", errors.New("SellMarket not implemented")
 	/*
-			orderNumber, err := wrapper.bittrexAPI.SellLimit(market.Name, amount, limit)
-			return orderNumber, err
-		}
-
-		// SellMarket performs a market sell action.
-		func (wrapper BittrexWrapperV2) SellMarket(market environment.Market, amount float64) (string, error) {
-			return errors.New("SellMarket not implemented")
-			/*
-				orderNumber, err := wrapper.bittrexAPI.SellMarket(market.Name, amount)
-				return orderNumber, err
+		orderNumber, err := wrapper.bittrexAPI.SellMarket(market.Name, amount)
+		return orderNumber, err
 	*/
 }
 

@@ -122,12 +122,12 @@ func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) error
 //package github.com/toorop/go-bittrex
 //refer to https://github.com/toorop/go-bittrex/blob/master/examples/bittrex.go
 
-//BittrexWrapper provides a Generic wrapper of the Bittrex API.
+// BittrexWrapper provides a Generic wrapper of the Bittrex API.
 type BittrexWrapper struct {
 	bittrexAPI *bittrexAPI.Bittrex //Represents the helper of the Bittrex API.
 }
 
-//NewBittrexWrapper creates a generic wrapper of the bittrex API.
+// NewBittrexWrapper creates a generic wrapper of the bittrex API.
 func NewBittrexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return BittrexWrapper{
 		bittrexAPI: bittrexAPI.New(publicKey, secretKey),
