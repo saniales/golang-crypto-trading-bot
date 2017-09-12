@@ -11,7 +11,7 @@ func InitExchange(exchangeConfig environment.ExchangeConfig) exchangeWrappers.Ex
 	case "bittrex":
 		return exchangeWrappers.NewBittrexWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
 	case "bittrexV2":
-		return exchangeWrappers.NewBittrexV2Wrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
+		return exchangeWrappers.NewBittrexV2Wrapper()
 	case "poloniex":
 		return nil
 	case "yobit":
