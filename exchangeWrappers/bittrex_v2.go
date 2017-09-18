@@ -125,6 +125,11 @@ func (wrapper BittrexWrapperV2) GetMarketSummaries(markets map[string]*environme
 		return err
 	}
 	for _, summary := range bittrexSummaries {
+		if _, exists := markets[summary.MarketName]; !exists {
+			markets[summary.MarketName] = &environment.Market{
+				Name: summary.MarketName,
+			}
+		}
 		markets[summary.MarketName].Summary = environment.MarketSummary{
 			High:   summary.High,
 			Low:    summary.Low,
