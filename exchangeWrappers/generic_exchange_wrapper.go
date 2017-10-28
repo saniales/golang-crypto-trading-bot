@@ -15,7 +15,5 @@ type ExchangeWrapper interface {
 	GetMarketSummaries(markets map[string]*environment.Market) error                    //Gets the current market summaries.
 	GetOrderBook(market *environment.Market) error                                      //Gets the order(ASK + BID) book of a market.
 	BuyLimit(market environment.Market, amount float64, limit float64) (string, error)  //performs a limit buy action.
-	BuyMarket(market environment.Market, amount float64) (string, error)                //performs a market buy action.
 	SellLimit(market environment.Market, amount float64, limit float64) (string, error) //performs a limit sell action.
-	SellMarket(market environment.Market, amount float64) (string, error)               //performs a market sell action.
 }

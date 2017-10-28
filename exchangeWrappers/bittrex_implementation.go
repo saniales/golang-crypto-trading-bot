@@ -42,7 +42,7 @@ func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) error {
-	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(market.Name, "both", 100)
+	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(market.Name, "both")
 	if err != nil {
 		return err
 	}
@@ -57,17 +57,21 @@ func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) error {
 	totalLength := len(bittrexOrderBook.Buy) + len(bittrexOrderBook.Sell)
 	orders := make([]environment.Order, totalLength)
 	for i, order := range bittrexOrderBook.Buy {
+		qty, _ := order.Quantity.Float64()
+		rate, _ := order.Rate.Float64()
 		orders[i] = environment.Order{
 			Type:     environment.Bid,
-			Quantity: order.Quantity,
-			Value:    order.Rate,
+			Quantity: qty,
+			Value:    rate,
 		}
 	}
 	for i, order := range bittrexOrderBook.Sell {
+		qty, _ := order.Quantity.Float64()
+		rate, _ := order.Rate.Float64()
 		orders[i+len(bittrexOrderBook.Buy)] = environment.Order{
 			Type:     environment.Ask,
-			Quantity: order.Quantity,
-			Value:    order.Rate,
+			Quantity: qty,
+			Value:    rate,
 		}
 	}
 
@@ -80,21 +84,9 @@ func (wrapper BittrexWrapper) BuyLimit(market environment.Market, amount float64
 	return orderNumber, err
 }
 
-// BuyMarket performs a market buy action.
-func (wrapper BittrexWrapper) BuyMarket(market environment.Market, amount float64) (string, error) {
-	orderNumber, err := wrapper.bittrexAPI.BuyMarket(market.Name, amount)
-	return orderNumber, err
-}
-
 // SellLimit performs a limit sell action.
 func (wrapper BittrexWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.bittrexAPI.SellLimit(market.Name, amount, limit)
-	return orderNumber, err
-}
-
-// SellMarket performs a market sell action.
-func (wrapper BittrexWrapper) SellMarket(market environment.Market, amount float64) (string, error) {
-	orderNumber, err := wrapper.bittrexAPI.SellMarket(market.Name, amount)
 	return orderNumber, err
 }
 
