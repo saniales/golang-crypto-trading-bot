@@ -27,17 +27,6 @@ const (
 	versionNumber = "0.0.1-pre-alpha"
 )
 
-//GlobalFlags provides flag definitions valid for the whole system.
-var GlobalFlags struct {
-	Verbose    int    //Tells the program to print everything to screen (used multiple times for better verbosity).
-	ConfigFile string //Config file path (assumed ./.gobot if not specified)
-}
-
-//rootFlags provides flag definitions valid for root command.
-var rootFlags struct {
-	Version bool
-}
-
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "gobot",

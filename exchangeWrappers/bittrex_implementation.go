@@ -1,3 +1,18 @@
+// Copyright © 2017 Alessandro Sanino <saninoale@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package exchangeWrappers
 
 import (
@@ -57,21 +72,17 @@ func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) error {
 	totalLength := len(bittrexOrderBook.Buy) + len(bittrexOrderBook.Sell)
 	orders := make([]environment.Order, totalLength)
 	for i, order := range bittrexOrderBook.Buy {
-		qty, _ := order.Quantity.Float64()
-		rate, _ := order.Rate.Float64()
 		orders[i] = environment.Order{
 			Type:     environment.Bid,
-			Quantity: qty,
-			Value:    rate,
+			Quantity: order.Quantity,
+			Value:    order.Rate,
 		}
 	}
 	for i, order := range bittrexOrderBook.Sell {
-		qty, _ := order.Quantity.Float64()
-		rate, _ := order.Rate.Float64()
 		orders[i+len(bittrexOrderBook.Buy)] = environment.Order{
 			Type:     environment.Ask,
-			Quantity: qty,
-			Value:    rate,
+			Quantity: order.Quantity,
+			Value:    order.Rate,
 		}
 	}
 

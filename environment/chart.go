@@ -1,3 +1,18 @@
+// Copyright © 2017 Alessandro Sanino <saninoale@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package environment
 
 //CandleStick represents a single candle in the graph.
@@ -5,21 +20,23 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 //CandleStick represents a single candlestick in a chart.
 type CandleStick struct {
-	High  float64 //Represents the highest value obtained during candle period.
-	Open  float64 //Represents the first value of the candle period.
-	Close float64 //Represents the last value of the candle period.
-	Low   float64 //Represents the lowest value obtained during candle period.
+	High  decimal.Decimal //Represents the highest value obtained during candle period.
+	Open  decimal.Decimal //Represents the first value of the candle period.
+	Close decimal.Decimal //Represents the last value of the candle period.
+	Low   decimal.Decimal //Represents the lowest value obtained during candle period.
 }
 
 func (cs CandleStick) String() string {
 	var color string
-	if cs.Open > cs.Close {
+	if cs.Open.GreaterThan(cs.Close) {
 		color = "Green/Bullish"
-	} else if cs.Open < cs.Close {
+	} else if cs.Open.LessThan(cs.Close) {
 		color = "Red/Bearish"
 	} else {
 		color = "Neutral"
