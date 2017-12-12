@@ -36,10 +36,6 @@ var startCmd = &cobra.Command{
 	Run:   executeStartCommand,
 }
 
-var startFlags struct {
-	Simulate bool
-}
-
 var botConfig environment.BotConfig
 
 func init() {
