@@ -29,10 +29,10 @@ type BittrexWrapperV2 struct {
 }
 
 // NewBittrexV2Wrapper creates a generic wrapper of the bittrex API v2.0.
-func NewBittrexV2Wrapper(PublicKey string, SecretKey string) ExchangeWrapper {
+func NewBittrexV2Wrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return BittrexWrapperV2{
-		PublicKey: PublicKey,
-		SecretKey: SecretKey,
+		PublicKey: publicKey,
+		SecretKey: secretKey,
 	}
 }
 
