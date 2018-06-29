@@ -1,5 +1,4 @@
 // Copyright © 2017 Alessandro Sanino <saninoale@gmail.com>
-// {{.copyright}}
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,16 +24,6 @@ import (
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/spf13/cobra"
 )
-
-var initFlags struct {
-	ConfigFile string
-	Exchange   string
-	Strategies []struct {
-		Market   string
-		Strategy string
-	}
-	BTCAddress string
-}
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{

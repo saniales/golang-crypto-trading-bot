@@ -1,3 +1,18 @@
+// Copyright © 2017 Alessandro Sanino <saninoale@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
 package environment
 
 import (
@@ -42,13 +57,12 @@ type MarketSummary struct {
 }
 
 func (ms MarketSummary) String() string {
-	ret := fmt.Sprintf("  Last: %.8f\n", ms.Last)
-	ret += fmt.Sprintf("  ASK: %.8f\n", ms.Ask)
-	ret += fmt.Sprintf("  BID: %.8f\n", ms.Bid)
-	ret += fmt.Sprintf("  Volume: %.2f\n", ms.Volume)
-	ret += fmt.Sprintf("  High: %.8f\n", ms.High)
-	ret += fmt.Sprintf("  Low: %.8f\n", ms.Low)
-	return ret
+	return fmt.Sprintln("  Last: ", ms.Last) +
+		fmt.Sprintln("  ASK: ", ms.Ask) +
+		fmt.Sprintln("  BID: ", ms.Bid) +
+		fmt.Sprintln("  Volume: ", ms.Volume) +
+		fmt.Sprintln("  High: ", ms.High) +
+		fmt.Sprintln("  Low: ", ms.Low)
 }
 
 //UpdateFromTicker updates the values of the market summary from a Ticker Data.
