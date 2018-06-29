@@ -3,14 +3,16 @@ package environment
 import (
 	"fmt"
 	"strings"
+
+	"github.com/shopspring/decimal"
 )
 
 //Ticker provides data incoming from API Tickers, which have little amount of information
 //regarding very last updates from a market.
 type Ticker struct {
-	Ask  float64 `json:"Ask"`  //Represents ASK value from the ticker.
-	Bid  float64 `json:"Bid"`  //Represents BID value from the ticker.
-	Last float64 `json:"Last"` //Represents LAST trade value from the ticker.
+	Ask  decimal.Decimal `json:"Ask"`  //Represents ASK value from the ticker.
+	Bid  decimal.Decimal `json:"Bid"`  //Represents BID value from the ticker.
+	Last decimal.Decimal `json:"Last"` //Represents LAST trade value from the ticker.
 }
 
 //Market represents the environment the bot is trading in.
@@ -31,12 +33,12 @@ func (m Market) String() string {
 
 //MarketSummary represents the summary data of a market.
 type MarketSummary struct {
-	High   float64 `json:"high,required"`   //Represents the 24 hours maximum peak of this market.
-	Low    float64 `json:"low,required"`    //Represents the 24 hours minimum peak of this market.
-	Volume float64 `json:"volume,required"` //Represents the 24 volume peak of this market.
-	Ask    float64 `json:"ask,required"`    //Represents the current ASK value.
-	Bid    float64 `json:"bid,required"`    //Represents the current BID value.
-	Last   float64 `json:"last,required"`   //Represents the value of the last trade.
+	High   decimal.Decimal `json:"high,required"`   //Represents the 24 hours maximum peak of this market.
+	Low    decimal.Decimal `json:"low,required"`    //Represents the 24 hours minimum peak of this market.
+	Volume decimal.Decimal `json:"volume,required"` //Represents the 24 volume peak of this market.
+	Ask    decimal.Decimal `json:"ask,required"`    //Represents the current ASK value.
+	Bid    decimal.Decimal `json:"bid,required"`    //Represents the current BID value.
+	Last   decimal.Decimal `json:"last,required"`   //Represents the value of the last trade.
 }
 
 func (ms MarketSummary) String() string {

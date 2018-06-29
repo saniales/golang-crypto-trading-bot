@@ -5,21 +5,23 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 //CandleStick represents a single candlestick in a chart.
 type CandleStick struct {
-	High  float64 //Represents the highest value obtained during candle period.
-	Open  float64 //Represents the first value of the candle period.
-	Close float64 //Represents the last value of the candle period.
-	Low   float64 //Represents the lowest value obtained during candle period.
+	High  decimal.Decimal //Represents the highest value obtained during candle period.
+	Open  decimal.Decimal //Represents the first value of the candle period.
+	Close decimal.Decimal //Represents the last value of the candle period.
+	Low   decimal.Decimal //Represents the lowest value obtained during candle period.
 }
 
 func (cs CandleStick) String() string {
 	var color string
-	if cs.Open > cs.Close {
+	if cs.Open.GreaterThan(cs.Close) {
 		color = "Green/Bullish"
-	} else if cs.Open < cs.Close {
+	} else if cs.Open.LessThan(cs.Close) {
 		color = "Red/Bearish"
 	} else {
 		color = "Neutral"
