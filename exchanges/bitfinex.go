@@ -67,7 +67,7 @@ func (wrapper BitfinexWrapper) GetOrderBook(market *environment.Market) error {
 			Value:    rate,
 		})
 	}
-	for i, order := range bitfinexOrderBook.Asks {
+	for _, order := range bitfinexOrderBook.Asks {
 		amount, _ := decimal.NewFromString(order.Amount)
 		rate, _ := decimal.NewFromString(order.Rate)
 		orders = append(orders, environment.Order{
