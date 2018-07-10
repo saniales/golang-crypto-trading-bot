@@ -22,7 +22,7 @@ import (
 
 	"github.com/saniales/golang-crypto-trading-bot/botHelpers"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
-	"github.com/saniales/golang-crypto-trading-bot/exchangeWrappers"
+	"github.com/saniales/golang-crypto-trading-bot/exchanges"
 	"github.com/saniales/golang-crypto-trading-bot/strategies"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -94,12 +94,12 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 	fmt.Println("EXIT, good bye :)")
 }
 
-func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper) {
+func executeBotLoop(wrapper exchanges.ExchangeWrapper) {
 	strategies.ApplyAllStrategies(wrapper)
 }
 
 /*
-func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string]*environment.Market, tactics map[string]strategies.Strategy) error {
+func executeBotLoop(wrapper exchanges.ExchangeWrapper, markets map[string]*environment.Market, tactics map[string]strategies.Strategy) error {
 	for marketName, strategy := range tactics {
 		market := markets[marketName]
 		if strategy.SetUpStrategy(wrapper, market) != nil {
@@ -133,7 +133,7 @@ func executeBotLoop(wrapper exchangeWrappers.ExchangeWrapper, markets map[string
 }
 
 
-func applyAction(wrapper exchangeWrappers.ExchangeWrapper, market environment.Market, action strategies.Action, amount float64, limit float64) error {
+func applyAction(wrapper exchanges.ExchangeWrapper, market environment.Market, action strategies.Action, amount float64, limit float64) error {
 	switch action {
 	case strategies.Buy:
 		if startFlags.Simulate == false {

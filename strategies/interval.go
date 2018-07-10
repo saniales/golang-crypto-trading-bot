@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/saniales/golang-crypto-trading-bot/environment"
-	"github.com/saniales/golang-crypto-trading-bot/exchangeWrappers"
+	"github.com/saniales/golang-crypto-trading-bot/exchanges"
 )
 
 // IntervalStrategy is an interval based strategy.
@@ -39,7 +39,7 @@ func (is IntervalStrategy) String() string {
 }
 
 // Apply executes Cyclically the On Update, basing on provided interval.
-func (is IntervalStrategy) Apply(wrapper exchangeWrappers.ExchangeWrapper, market *environment.Market) {
+func (is IntervalStrategy) Apply(wrapper exchanges.ExchangeWrapper, market *environment.Market) {
 	var err error
 	if is.Model.Setup != nil {
 		err = is.Model.Setup(wrapper, market)

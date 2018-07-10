@@ -21,7 +21,7 @@ import (
 
 	"github.com/nlopes/slack"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
-	"github.com/saniales/golang-crypto-trading-bot/exchangeWrappers"
+	"github.com/saniales/golang-crypto-trading-bot/exchanges"
 	"github.com/shomali11/slacker"
 )
 
@@ -31,7 +31,7 @@ var bot *slacker.Slacker
 // RTM not supported (and usually not requested when trading, this is an automated bot).
 var slackIntegrationExample = IntervalStrategy{
 	Model: StrategyModel{
-		Setup: func(exchangeWrappers.ExchangeWrapper, *environment.Market) error {
+		Setup: func(exchanges.ExchangeWrapper, *environment.Market) error {
 			// connect slack token
 			bot = slacker.NewClient("YOUR-TOKEN-HERE")
 			bot.Init(func() {
@@ -48,7 +48,7 @@ var slackIntegrationExample = IntervalStrategy{
 			}()
 			return nil
 		},
-		OnUpdate: func(exchangeWrappers.ExchangeWrapper, *environment.Market) error {
+		OnUpdate: func(exchanges.ExchangeWrapper, *environment.Market) error {
 			//if updates has requirements
 			_, _, err := bot.Client.PostMessage("DESIRED-CHANNEL", "OMG something happening!!!!!", slack.PostMessageParameters{})
 			return err
