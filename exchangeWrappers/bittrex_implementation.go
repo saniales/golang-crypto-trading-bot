@@ -17,6 +17,7 @@ package exchangeWrappers
 
 import (
 	"github.com/saniales/golang-crypto-trading-bot/environment"
+	"github.com/shopspring/decimal"
 
 	bittrexAPI "github.com/toorop/go-bittrex"
 )
@@ -64,7 +65,7 @@ func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) error {
 
 	if market.WatchedChart == nil {
 		market.WatchedChart = &environment.CandleStickChart{
-		// MarketName: market.Name,
+			// MarketName: market.Name,
 		}
 	} else {
 		market.WatchedChart.OrderBook = nil
