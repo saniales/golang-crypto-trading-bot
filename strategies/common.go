@@ -20,7 +20,7 @@ import (
 	"sync"
 
 	"github.com/saniales/golang-crypto-trading-bot/environment"
-	"github.com/saniales/golang-crypto-trading-bot/exchangeWrappers"
+	"github.com/saniales/golang-crypto-trading-bot/exchanges"
 )
 
 var available map[string]Strategy                   //mapped name -> strategy
@@ -29,15 +29,15 @@ var appliedTactics map[*environment.Market]Strategy //mapped strategy -> marketN
 // Strategy represents a generic strategy.
 type Strategy interface {
 	Name() string                                                // Name returns the name of the strategy.
-	Apply(exchangeWrappers.ExchangeWrapper, *environment.Market) // Apply applies the strategy when called, using the specified wrapper.
+	Apply(exchanges.ExchangeWrapper, *environment.Market) // Apply applies the strategy when called, using the specified wrapper.
 }
 
 //StrategyModel represents a strategy model used by strategies.
 type StrategyModel struct {
 	Name     string
-	Setup    func(exchangeWrappers.ExchangeWrapper, *environment.Market) error
-	TearDown func(exchangeWrappers.ExchangeWrapper, *environment.Market) error
-	OnUpdate func(exchangeWrappers.ExchangeWrapper, *environment.Market) error
+	Setup    func(exchanges.ExchangeWrapper, *environment.Market) error
+	TearDown func(exchanges.ExchangeWrapper, *environment.Market) error
+	OnUpdate func(exchanges.ExchangeWrapper, *environment.Market) error
 	OnError  func(error)
 }
 
@@ -64,7 +64,7 @@ func MatchWithMarket(strategyName string, market *environment.Market) error {
 }
 
 // ApplyAllStrategies applies all matched strategies concurrently.
-func ApplyAllStrategies(wrapper exchangeWrappers.ExchangeWrapper) {
+func ApplyAllStrategies(wrapper exchanges.ExchangeWrapper) {
 	var wg sync.WaitGroup
 	wg.Add(len(appliedTactics))
 	for m, s := range appliedTactics {

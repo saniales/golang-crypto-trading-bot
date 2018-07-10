@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package exchangeWrappers
+package exchanges
 
 import (
 	"context"
@@ -134,7 +134,7 @@ func (wrapper BinanceWrapper) GetTicker(market *environment.Market) error {
 	bid, _ := decimal.NewFromString(binanceTicker.BidPrice)
 
 	market.Summary.UpdateFromTicker(environment.Ticker{
-		Last: ask,
+		Last: ask, // TODO: find a better way for last value, if any
 		Ask:  ask,
 		Bid:  bid,
 	})
@@ -157,7 +157,7 @@ func (wrapper BinanceWrapper) GetMarketSummaries(markets map[string]*environment
 			low, _ := decimal.NewFromString(binanceSummary.LowPrice)
 			volume, _ := decimal.NewFromString(binanceSummary.Volume)
 			markets[binanceSummary.Symbol].Summary = environment.MarketSummary{
-				Last:   ask,
+				Last:   ask, // TODO: find a better way for last value, if any
 				Ask:    ask,
 				Bid:    bid,
 				High:   high,

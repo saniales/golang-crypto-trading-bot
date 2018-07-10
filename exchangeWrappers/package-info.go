@@ -13,5 +13,5 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-//Package exchangeWrappers contains all wrappers for common exchanges.
-package exchangeWrappers
+//Package exchanges contains all wrappers for common exchanges.
+package exchanges
