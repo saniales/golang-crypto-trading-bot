@@ -17,6 +17,7 @@ package exchangeWrappers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/adshao/go-binance"
@@ -72,7 +73,7 @@ func (wrapper BinanceWrapper) GetOrderBook(market *environment.Market) error {
 
 	if market.WatchedChart == nil {
 		market.WatchedChart = &environment.CandleStickChart{
-		// MarketName: market.Name,
+			// MarketName: market.Name,
 		}
 	} else {
 		market.WatchedChart.OrderBook = nil
@@ -124,17 +125,18 @@ func (wrapper BinanceWrapper) SellLimit(market environment.Market, amount float6
 
 // GetTicker gets the updated ticker for a market.
 func (wrapper BinanceWrapper) GetTicker(market *environment.Market) error {
-	binanceTickers, err := wrapper.api.NewKlinesService().Symbol(market.Name).Do(context.Background())
+	binanceTicker, err := wrapper.api.NewBookTickerService().Symbol(market.Name).Do(context.Background())
 	if err != nil {
 		return err
 	}
 
-	lastTick := binanceTickers[len(binanceTickers)-1]
+	ask, _ := decimal.NewFromString(binanceTicker.AskPrice)
+	bid, _ := decimal.NewFromString(binanceTicker.BidPrice)
 
 	market.Summary.UpdateFromTicker(environment.Ticker{
-		Last: decimal.NewFromFloat(lastTick.Last),
-		Bid:  decimal.NewFromFloat(lastTick.Bid),
-		Ask:  decimal.NewFromFloat(lastTick.Ask),
+		Last: ask,
+		Ask:  ask,
+		Bid:  bid,
 	})
 
 	return nil
@@ -142,10 +144,66 @@ func (wrapper BinanceWrapper) GetTicker(market *environment.Market) error {
 
 // GetMarketSummaries get the markets summary of all markets
 func (wrapper BinanceWrapper) GetMarketSummaries(markets map[string]*environment.Market) error {
-	panic("Not implemented")
+	binanceSummaries, err := wrapper.api.NewListPriceChangeStatsService().Do(context.Background())
+	if err != nil {
+		return err
+	}
+
+	for _, binanceSummary := range binanceSummaries {
+		go func() { // we can assume to have never same symbol twice so its safe
+			ask, _ := decimal.NewFromString(binanceSummary.AskPrice)
+			bid, _ := decimal.NewFromString(binanceSummary.BidPrice)
+			high, _ := decimal.NewFromString(binanceSummary.HighPrice)
+			low, _ := decimal.NewFromString(binanceSummary.LowPrice)
+			volume, _ := decimal.NewFromString(binanceSummary.Volume)
+			markets[binanceSummary.Symbol].Summary = environment.MarketSummary{
+				Last:   ask,
+				Ask:    ask,
+				Bid:    bid,
+				High:   high,
+				Low:    low,
+				Volume: volume,
+			}
+		}()
+	}
+
+	return nil
 }
 
 // GetMarketSummary gets the current market summary.
 func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) error {
-	panic("Not implemented")
+	hilo, err := wrapper.api.NewListPriceChangeStatsService().Do(context.Background())
+	if err != nil {
+		return err
+	}
+
+	var binanceSummary *binance.PriceChangeStats
+
+	for _, val := range hilo {
+		if val.Symbol == market.Name {
+			binanceSummary = val
+			break
+		}
+	}
+
+	if binanceSummary == nil {
+		return errors.New("Symbol not found")
+	}
+
+	ask, _ := decimal.NewFromString(binanceSummary.AskPrice)
+	bid, _ := decimal.NewFromString(binanceSummary.BidPrice)
+	high, _ := decimal.NewFromString(binanceSummary.HighPrice)
+	low, _ := decimal.NewFromString(binanceSummary.LowPrice)
+	volume, _ := decimal.NewFromString(binanceSummary.Volume)
+
+	market.Summary = environment.MarketSummary{
+		Last:   ask,
+		Ask:    ask,
+		Bid:    bid,
+		High:   high,
+		Low:    low,
+		Volume: volume,
+	}
+
+	return nil
 }
