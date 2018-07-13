@@ -38,6 +38,11 @@ func NewBinanceWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	}
 }
 
+// Name returns the name of the wrapped exchange.
+func (wrapper BinanceWrapper) Name() string {
+	return "binance"
+}
+
 // GetMarkets Gets all the markets info.
 func (wrapper BinanceWrapper) GetMarkets() ([]*environment.Market, error) {
 	binanceMarkets, err := wrapper.api.NewListPricesService().Do(context.Background())

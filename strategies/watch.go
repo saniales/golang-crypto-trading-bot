@@ -27,12 +27,12 @@ import (
 var Watch5Min Strategy = IntervalStrategy{
 	Model: StrategyModel{
 		Name: "Watch5Min",
-		Setup: func(wrapper exchanges.ExchangeWrapper, market *environment.Market) error {
+		Setup: func(wrappers []exchanges.ExchangeWrapper, market *environment.Market) error {
 			fmt.Println("Watch5Min starting")
 			return nil
 		},
-		OnUpdate: func(wrapper exchanges.ExchangeWrapper, market *environment.Market) error {
-			err := wrapper.GetTicker(market)
+		OnUpdate: func(wrappers []exchanges.ExchangeWrapper, market *environment.Market) error {
+			err := wrappers[0].GetTicker(market)
 			if err != nil {
 				return err
 			}
@@ -42,7 +42,7 @@ var Watch5Min Strategy = IntervalStrategy{
 		OnError: func(err error) {
 			fmt.Println(err)
 		},
-		TearDown: func(wrapper exchanges.ExchangeWrapper, market *environment.Market) error {
+		TearDown: func(wrappers []exchanges.ExchangeWrapper, market *environment.Market) error {
 			fmt.Println("Watch5Min exited")
 			return nil
 		},

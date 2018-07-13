@@ -38,6 +38,11 @@ func NewPoloniexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	}
 }
 
+// Name returns the name of the wrapped exchange.
+func (wrapper PoloniexWrapper) Name() string {
+	return "poloniex"
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper PoloniexWrapper) GetMarkets() ([]*environment.Market, error) {
 	poloniexMarkets, err := wrapper.api.Currencies()
@@ -67,7 +72,7 @@ func (wrapper PoloniexWrapper) GetOrderBook(market *environment.Market) error {
 
 	if market.WatchedChart == nil {
 		market.WatchedChart = &environment.CandleStickChart{
-		// MarketName: market.Name,
+			// MarketName: market.Name,
 		}
 	} else {
 		market.WatchedChart.OrderBook = nil

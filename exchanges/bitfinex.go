@@ -22,6 +22,11 @@ func NewBitfinexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	}
 }
 
+// Name returns the name of the wrapped exchange.
+func (wrapper BitfinexWrapper) Name() string {
+	return "bitfinex"
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper BitfinexWrapper) GetMarkets() ([]*environment.Market, error) {
 	bitfinexMarkets, err := wrapper.api.Pairs.All()

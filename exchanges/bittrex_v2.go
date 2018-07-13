@@ -36,6 +36,11 @@ func NewBittrexV2Wrapper(publicKey string, secretKey string) ExchangeWrapper {
 	}
 }
 
+// Name returns the name of the wrapped exchange.
+func (wrapper BittrexWrapperV2) Name() string {
+	return "bittrex"
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper BittrexWrapperV2) GetMarkets() ([]*environment.Market, error) {
 	bittrexMarkets, err := bittrex.GetMarkets()

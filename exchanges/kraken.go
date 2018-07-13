@@ -39,6 +39,11 @@ func NewKrakenWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	}
 }
 
+// Name returns the name of the wrapped exchange.
+func (wrapper KrakenWrapper) Name() string {
+	return "kraken"
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper KrakenWrapper) GetMarkets() ([]*environment.Market, error) {
 	krakenMarkets, err := wrapper.api.AssetPairs()

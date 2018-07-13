@@ -19,6 +19,7 @@ import "github.com/saniales/golang-crypto-trading-bot/environment"
 
 //ExchangeWrapper provides a generic wrapper for exchange services.
 type ExchangeWrapper interface {
+	Name() string // Gets the name of the exchange.
 	//DEPRECATED
 	//GetCandles(market *environment.Market, interval string) error //Gets the candles of a market.
 	GetMarkets() ([]*environment.Market, error) //Gets all the markets info.

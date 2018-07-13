@@ -28,16 +28,16 @@ var appliedTactics map[*environment.Market]Strategy //mapped strategy -> marketN
 
 // Strategy represents a generic strategy.
 type Strategy interface {
-	Name() string                                                // Name returns the name of the strategy.
-	Apply(exchanges.ExchangeWrapper, *environment.Market) // Apply applies the strategy when called, using the specified wrapper.
+	Name() string                                           // Name returns the name of the strategy.
+	Apply([]exchanges.ExchangeWrapper, *environment.Market) // Apply applies the strategy when called, using the specified wrapper.
 }
 
 //StrategyModel represents a strategy model used by strategies.
 type StrategyModel struct {
 	Name     string
-	Setup    func(exchanges.ExchangeWrapper, *environment.Market) error
-	TearDown func(exchanges.ExchangeWrapper, *environment.Market) error
-	OnUpdate func(exchanges.ExchangeWrapper, *environment.Market) error
+	Setup    func([]exchanges.ExchangeWrapper, *environment.Market) error
+	TearDown func([]exchanges.ExchangeWrapper, *environment.Market) error
+	OnUpdate func([]exchanges.ExchangeWrapper, *environment.Market) error
 	OnError  func(error)
 }
 
@@ -64,13 +64,13 @@ func MatchWithMarket(strategyName string, market *environment.Market) error {
 }
 
 // ApplyAllStrategies applies all matched strategies concurrently.
-func ApplyAllStrategies(wrapper exchanges.ExchangeWrapper) {
+func ApplyAllStrategies(wrappers []exchanges.ExchangeWrapper) {
 	var wg sync.WaitGroup
 	wg.Add(len(appliedTactics))
 	for m, s := range appliedTactics {
 		go func(s Strategy, m *environment.Market, wg *sync.WaitGroup) {
 			defer wg.Done()
-			s.Apply(wrapper, m)
+			s.Apply(wrappers, m)
 		}(s, m, &wg)
 	}
 	wg.Wait()

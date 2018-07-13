@@ -22,23 +22,3 @@ func InitExchange(exchangeConfig environment.ExchangeConfig) exchanges.ExchangeW
 		return nil
 	}
 }
-
-//InitMarkets uses ExchangeWrapper to find info about markets and initialize them.
-func InitMarkets(exchange exchanges.ExchangeWrapper) (map[string]*environment.Market, error) {
-	markets, err := exchange.GetMarkets()
-	if err != nil {
-		return nil, err
-	}
-
-	marketMap := make(map[string]*environment.Market, len(markets))
-	for _, market := range markets {
-		marketMap[market.Name] = market
-	}
-
-	err = exchange.GetMarketSummaries(marketMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return marketMap, nil
-}
