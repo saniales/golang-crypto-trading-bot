@@ -19,21 +19,28 @@ package environment
 //
 //Can be used to generate an ExchangeWrapper.
 type ExchangeConfig struct {
-	ExchangeName string `yaml:"exchange"`   //Represents the exchange name.
-	PublicKey    string `yaml:"public_key"` //Represents the public key used to connect to Exchange API.
-	SecretKey    string `yaml:"secret_key"` //Represents the secret key used to connect to Exchange API.
+	ExchangeName string `yaml:"exchange,required"`   //Represents the exchange name.
+	PublicKey    string `yaml:"public_key,required"` //Represents the public key used to connect to Exchange API.
+	SecretKey    string `yaml:"secret_key,required"` //Represents the secret key used to connect to Exchange API.
 }
 
 // StrategyConfig contains where a strategy will be applied in the specified exchange.
 type StrategyConfig struct {
-	Market   string `yaml:"market"`   //Represents the market where the strategy is applied.
-	Strategy string `yaml:"strategy"` //Represents the applied strategy name: must be one in the system.
+	Strategy string         `yaml:"strategy,required"`  //Represents the applied strategy name: must be unique in the system.
+	Markets  []MarketConfig `yaml:"exchanges,required"` //Represents the exchanges where the strategy is applied.
+}
+
+// MarketConfig contains all market configuration data.
+type MarketConfig struct {
+	Name      string `yaml:"name,required"` //Represents the market where the strategy is applied.
+	Exchanges []struct {
+		Name       string `yaml:"name,required"`        // Represents the name of the exchange.
+		MarketName string `yaml:"market_name,required"` // Represents the name of the market as seen from the exchange.
+	} `yaml:"exchanges,required"` // Represents the list of markets where the strategy is applied, along with extra-data regarding binded exchanges.
 }
 
 // BotConfig contains all config data of the bot, which can be also loaded from config file.
 type BotConfig struct {
-	Exchange   ExchangeConfig   `yaml:"exchange_config"` //Represents the current exchange configuration.
-	Strategies []StrategyConfig `yaml:"strategies"`      //Represents the current strategies adopted by the bot.
+	ExchangeConfigs []ExchangeConfig `yaml:"exchange_configs,required"` //Represents the current exchange configuration.
+	Strategies      []StrategyConfig `yaml:"strategies,required"`       //Represents the current strategies adopted by the bot.
 }
-
-//type Configs []ExchangeConfig

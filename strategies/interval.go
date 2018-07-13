@@ -39,23 +39,23 @@ func (is IntervalStrategy) String() string {
 }
 
 // Apply executes Cyclically the On Update, basing on provided interval.
-func (is IntervalStrategy) Apply(wrappers []exchanges.ExchangeWrapper, market *environment.Market) {
+func (is IntervalStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) {
 	var err error
 	if is.Model.Setup != nil {
-		err = is.Model.Setup(wrappers, market)
+		err = is.Model.Setup(wrappers, markets)
 		if err != nil && is.Model.OnError != nil {
 			is.Model.OnError(err)
 		}
 	}
 	for err == nil {
-		err = is.Model.OnUpdate(wrappers, market)
+		err = is.Model.OnUpdate(wrappers, markets)
 		if err != nil && is.Model.OnError != nil {
 			is.Model.OnError(err)
 		}
 		time.Sleep(is.Interval)
 	}
 	if is.Model.TearDown != nil {
-		err = is.Model.TearDown(wrappers, market)
+		err = is.Model.TearDown(wrappers, markets)
 		if err != nil && is.Model.OnError != nil {
 			is.Model.OnError(err)
 		}

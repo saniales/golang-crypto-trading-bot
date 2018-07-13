@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/saniales/golang-crypto-trading-bot/botHelpers"
+	helpers "github.com/saniales/golang-crypto-trading-bot/bot_helpers"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
 	"github.com/saniales/golang-crypto-trading-bot/strategies"
@@ -69,20 +69,15 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 	fmt.Println("DONE")
 
 	fmt.Print("Getting exchange info ... ")
-	exchangeWrapper := botHelpers.InitExchange(botConfig.Exchange)
-	fmt.Println("DONE")
-
-	fmt.Print("Getting markets cold info ... ")
-	markets, err := botHelpers.InitMarkets(exchangeWrapper)
-	if err != nil {
-		fmt.Println("Cannot initialize Markets data :", err)
-		return
+	wrappers := make([]exchanges.ExchangeWrapper, len(botConfig.ExchangeConfigs))
+	for i, config := range botConfig.ExchangeConfigs {
+		wrappers[i] = helpers.InitExchange(config)
 	}
 	fmt.Println("DONE")
 
 	fmt.Print("Getting markets cold info ... ")
 	for _, strategyConf := range botConfig.Strategies {
-		err := strategies.MatchWithMarket(strategyConf.Strategy, markets[strategyConf.Market])
+		err := strategies.MatchWithMarkets(strategyConf.Strategy, markets[strategyConf.Markets])
 		if err != nil {
 			fmt.Println("Cannot add tactic : ", err)
 		}
@@ -90,12 +85,12 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 	fmt.Println("DONE")
 
 	fmt.Println("Starting bot ... ")
-	executeBotLoop(exchangeWrapper)
+	executeBotLoop(wrappers)
 	fmt.Println("EXIT, good bye :)")
 }
 
-func executeBotLoop(wrapper exchanges.ExchangeWrapper) {
-	strategies.ApplyAllStrategies(wrapper)
+func executeBotLoop(wrappers []exchanges.ExchangeWrapper) {
+	strategies.ApplyAllStrategies(wrappers)
 }
 
 /*
