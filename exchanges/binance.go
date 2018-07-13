@@ -71,7 +71,7 @@ func (wrapper BinanceWrapper) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper BinanceWrapper) GetOrderBook(market *environment.Market) error {
-	binanceOrderBook, err := wrapper.api.NewListOrdersService().Symbol(market.Name).Do(context.Background())
+	binanceOrderBook, err := wrapper.api.NewListOrdersService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 	if err != nil {
 		return err
 	}
@@ -117,20 +117,20 @@ func (wrapper BinanceWrapper) GetOrderBook(market *environment.Market) error {
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper BinanceWrapper) BuyLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeLimit).Side(binance.SideTypeBuy).Symbol(market.Name).Price(fmt.Sprint(limit)).Quantity(fmt.Sprint(amount)).Do(context.Background())
+func (wrapper BinanceWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeLimit).Side(binance.SideTypeBuy).Symbol(MarketNameFor(market, wrapper)).Price(fmt.Sprint(limit)).Quantity(fmt.Sprint(amount)).Do(context.Background())
 	return fmt.Sprint(orderNumber.ClientOrderID), err
 }
 
 // SellLimit performs a limit sell action.
-func (wrapper BinanceWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeLimit).Side(binance.SideTypeSell).Symbol(market.Name).Price(fmt.Sprint(limit)).Quantity(fmt.Sprint(amount)).Do(context.Background())
+func (wrapper BinanceWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeLimit).Side(binance.SideTypeSell).Symbol(MarketNameFor(market, wrapper)).Price(fmt.Sprint(limit)).Quantity(fmt.Sprint(amount)).Do(context.Background())
 	return fmt.Sprint(orderNumber.ClientOrderID), err
 }
 
 // GetTicker gets the updated ticker for a market.
 func (wrapper BinanceWrapper) GetTicker(market *environment.Market) error {
-	binanceTicker, err := wrapper.api.NewBookTickerService().Symbol(market.Name).Do(context.Background())
+	binanceTicker, err := wrapper.api.NewBookTickerService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (wrapper BinanceWrapper) GetMarketSummaries(markets map[string]*environment
 	}
 
 	for _, binanceSummary := range binanceSummaries {
-		go func() { // we can assume to have never same symbol twice so its safe
+		go func(binanceSummary *binance.PriceChangeStats) { // we can assume to have never same symbol twice so its safe
 			ask, _ := decimal.NewFromString(binanceSummary.AskPrice)
 			bid, _ := decimal.NewFromString(binanceSummary.BidPrice)
 			high, _ := decimal.NewFromString(binanceSummary.HighPrice)
@@ -169,7 +169,7 @@ func (wrapper BinanceWrapper) GetMarketSummaries(markets map[string]*environment
 				Low:    low,
 				Volume: volume,
 			}
-		}()
+		}(binanceSummary)
 	}
 
 	return nil

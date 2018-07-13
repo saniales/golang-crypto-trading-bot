@@ -49,7 +49,7 @@ func (wrapper BitfinexWrapper) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper BitfinexWrapper) GetOrderBook(market *environment.Market) error {
-	bitfinexOrderBook, err := wrapper.api.OrderBook.Get(market.Name, 0, 0, false)
+	bitfinexOrderBook, err := wrapper.api.OrderBook.Get(MarketNameFor(market, wrapper), 0, 0, false)
 	if err != nil {
 		return err
 	}
@@ -88,8 +88,8 @@ func (wrapper BitfinexWrapper) GetOrderBook(market *environment.Market) error {
 // BuyLimit performs a limit buy action.
 //
 // NOTE: In bitfinex buy and sell orders behave the same (the go bitfinex api automatically puts it on correct side)
-func (wrapper BitfinexWrapper) BuyLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.Orders.Create(market.Name, amount, limit, bitfinex.OrderTypeExchangeLimit)
+func (wrapper BitfinexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.api.Orders.Create(MarketNameFor(market, wrapper), amount, limit, bitfinex.OrderTypeExchangeLimit)
 	if err != nil {
 		return "", err
 	}
@@ -99,13 +99,13 @@ func (wrapper BitfinexWrapper) BuyLimit(market environment.Market, amount float6
 // SellLimit performs a limit sell action.
 //
 // NOTE: In bitfinex buy and sell orders behave the same (the go bitfinex api automatically puts it on correct side)
-func (wrapper BitfinexWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper BitfinexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	return wrapper.BuyLimit(market, amount, limit)
 }
 
 // GetTicker gets the updated ticker for a market.
 func (wrapper BitfinexWrapper) GetTicker(market *environment.Market) error {
-	bitfinexTicker, err := wrapper.api.Ticker.Get(market.Name)
+	bitfinexTicker, err := wrapper.api.Ticker.Get(MarketNameFor(market, wrapper))
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (wrapper BitfinexWrapper) GetMarketSummaries(markets map[string]*environmen
 
 // GetMarketSummary gets the current market summary.
 func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) error {
-	bitfinexSummary, err := wrapper.api.Ticker.Get(market.Name)
+	bitfinexSummary, err := wrapper.api.Ticker.Get(MarketNameFor(market, wrapper))
 	if err != nil {
 		return err
 	}

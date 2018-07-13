@@ -21,14 +21,17 @@ import "github.com/saniales/golang-crypto-trading-bot/environment"
 type ExchangeWrapper interface {
 	Name() string // Gets the name of the exchange.
 	//DEPRECATED
-	//GetCandles(market *environment.Market, interval string) error //Gets the candles of a market.
-	GetMarkets() ([]*environment.Market, error) //Gets all the markets info.
-	//GetSellBook(market environment.Market) ([]environment.Order, error)                          //Gets the sell(ASK) book of a market.
-	//GetBuyBook(market environment.Market) ([]environment.Order, error)                           //Gets the buy(BID) book of a market.
+	//GetCandles(market *environment.Market, interval string) error // Gets the candles of a market.
+	//GetMarkets() ([]*environment.Market, error) //Gets all the markets info.
 	GetTicker(market *environment.Market) error        //Gets the updated ticker for a market.
 	GetMarketSummary(market *environment.Market) error //Gets the current market summary.
 	//GetMarketSummaries(markets map[string]*environment.Market) error                    //Gets the current market summaries.
-	GetOrderBook(market *environment.Market) error                                      //Gets the order(ASK + BID) book of a market.
-	BuyLimit(market environment.Market, amount float64, limit float64) (string, error)  //performs a limit buy action.
-	SellLimit(market environment.Market, amount float64, limit float64) (string, error) //performs a limit sell action.
+	GetOrderBook(market *environment.Market) error                                       //Gets the order(ASK + BID) book of a market.
+	BuyLimit(market *environment.Market, amount float64, limit float64) (string, error)  //performs a limit buy action.
+	SellLimit(market *environment.Market, amount float64, limit float64) (string, error) //performs a limit sell action.
+}
+
+// MarketNameFor gets the market name as seen by the exchange.
+func MarketNameFor(m *environment.Market, wrapper ExchangeWrapper) string {
+	return m.ExchangeNames[wrapper.Name()]
 }

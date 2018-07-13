@@ -70,7 +70,7 @@ func (wrapper KrakenWrapper) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) error {
-	krakenOrderBook, err := wrapper.api.Depth(market.Name, 0)
+	krakenOrderBook, err := wrapper.api.Depth(MarketNameFor(market, wrapper), 0)
 	if err != nil {
 		return err
 	}
@@ -107,8 +107,8 @@ func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) error {
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper KrakenWrapper) BuyLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.AddOrder(market.Name, "buy", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
+func (wrapper KrakenWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "buy", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
 	if err != nil {
 		return "", err
 	}
@@ -118,8 +118,8 @@ func (wrapper KrakenWrapper) BuyLimit(market environment.Market, amount float64,
 // SellLimit performs a limit sell action.
 //
 // NOTE: In kraken buy and sell orders behave the same (the go kraken api automatically puts it on correct side)
-func (wrapper KrakenWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.AddOrder(market.Name, "sell", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
+func (wrapper KrakenWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "sell", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
 	if err != nil {
 		return "", err
 	}
@@ -128,12 +128,12 @@ func (wrapper KrakenWrapper) SellLimit(market environment.Market, amount float64
 
 // GetTicker gets the updated ticker for a market.
 func (wrapper KrakenWrapper) GetTicker(market *environment.Market) error {
-	krakenTicker, err := wrapper.api.Ticker(market.Name)
+	krakenTicker, err := wrapper.api.Ticker(MarketNameFor(market, wrapper))
 	if err != nil {
 		return err
 	}
 
-	ticker := krakenTicker.GetPairTickerInfo(market.Name)
+	ticker := krakenTicker.GetPairTickerInfo(MarketNameFor(market, wrapper))
 
 	last, _ := decimal.NewFromString(ticker.Close[0])
 	ask, _ := decimal.NewFromString(ticker.Ask[0])
@@ -168,12 +168,12 @@ func (wrapper KrakenWrapper) GetMarketSummaries(markets map[string]*environment.
 
 // GetMarketSummary gets the current market summary.
 func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) error {
-	krakenSummary, err := wrapper.api.Ticker(market.Name)
+	krakenSummary, err := wrapper.api.Ticker(MarketNameFor(market, wrapper))
 	if err != nil {
 		return err
 	}
 
-	sum := krakenSummary.GetPairTickerInfo(market.Name)
+	sum := krakenSummary.GetPairTickerInfo(MarketNameFor(market, wrapper))
 
 	high, _ := decimal.NewFromString(sum.High[0])
 	low, _ := decimal.NewFromString(sum.Low[0])

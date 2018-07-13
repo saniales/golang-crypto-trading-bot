@@ -90,7 +90,7 @@ func (wrapper BittrexWrapperV2) GetOrderBook(market *environment.Market) error {
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper BittrexWrapperV2) BuyLimit(market environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper BittrexWrapperV2) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	return "", errors.New("BuyLimit not implemented")
 	/*
 		orderNumber, err := wrapper.bittrexAPI.BuyLimit(market.Name, amount, limit)
@@ -99,7 +99,7 @@ func (wrapper BittrexWrapperV2) BuyLimit(market environment.Market, amount float
 }
 
 // BuyMarket performs a market buy action.
-func (wrapper BittrexWrapperV2) BuyMarket(market environment.Market, amount float64) (string, error) {
+func (wrapper BittrexWrapperV2) BuyMarket(market *environment.Market, amount float64) (string, error) {
 	return "", errors.New("BuyMarket not implemented")
 	/*
 		orderNumber, err := wrapper.bittrexAPI.BuyMarket(market.Name, amount)
@@ -108,7 +108,7 @@ func (wrapper BittrexWrapperV2) BuyMarket(market environment.Market, amount floa
 }
 
 // SellLimit performs a limit sell action.
-func (wrapper BittrexWrapperV2) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper BittrexWrapperV2) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	return "", errors.New("SellLimit not implemented")
 	/*
 		orderNumber, err := wrapper.bittrexAPI.SellLimit(market.Name, amount, limit)
@@ -117,7 +117,7 @@ func (wrapper BittrexWrapperV2) SellLimit(market environment.Market, amount floa
 }
 
 // SellMarket performs a market sell action.
-func (wrapper BittrexWrapperV2) SellMarket(market environment.Market, amount float64) (string, error) {
+func (wrapper BittrexWrapperV2) SellMarket(market *environment.Market, amount float64) (string, error) {
 	return "", errors.New("SellMarket not implemented")
 	/*
 		orderNumber, err := wrapper.bittrexAPI.SellMarket(market.Name, amount)

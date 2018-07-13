@@ -65,7 +65,7 @@ func (wrapper PoloniexWrapper) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper PoloniexWrapper) GetOrderBook(market *environment.Market) error {
-	poloniexOrderBook, err := wrapper.api.OrderBook(market.Name)
+	poloniexOrderBook, err := wrapper.api.OrderBook(MarketNameFor(market, wrapper))
 	if err != nil {
 		return err
 	}
@@ -98,14 +98,14 @@ func (wrapper PoloniexWrapper) GetOrderBook(market *environment.Market) error {
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper PoloniexWrapper) BuyLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.Buy(market.Name, amount, limit)
+func (wrapper PoloniexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.api.Buy(MarketNameFor(market, wrapper), amount, limit)
 	return fmt.Sprint(orderNumber.OrderNumber), err
 }
 
 // SellLimit performs a limit sell action.
-func (wrapper PoloniexWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.Sell(market.Name, amount, limit)
+func (wrapper PoloniexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.api.Sell(MarketNameFor(market, wrapper), amount, limit)
 	return fmt.Sprint(orderNumber.OrderNumber), err
 }
 
@@ -115,7 +115,7 @@ func (wrapper PoloniexWrapper) GetTicker(market *environment.Market) error {
 	if err != nil {
 		return err
 	}
-	ticker, exists := poloniexTicker[market.Name]
+	ticker, exists := poloniexTicker[MarketNameFor(market, wrapper)]
 	if !exists {
 		return errors.New("Market not found")
 	}
@@ -165,9 +165,9 @@ func (wrapper PoloniexWrapper) GetMarketSummary(market *environment.Market) erro
 
 
 		market.Summary = environment.MarketSummary{
-			High:   ticker[market.Name]. ,
+			High:   ticker[MarketNameFor(market, wrapper)]. ,
 			Low:    summary.Low,
-			Volume: decimal.NewFromFloat(volume[market.Name]),
+			Volume: decimal.NewFromFloat(volume[MarketNameFor(market, wrapper)]),
 			Bid:    summary.Bid,
 			Ask:    summary.Ask,
 			Last:   summary.Last,

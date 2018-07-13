@@ -96,13 +96,13 @@ func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) error {
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper BittrexWrapper) BuyLimit(market environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper BittrexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.bittrexAPI.BuyLimit(market.Name, decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
 
 // SellLimit performs a limit sell action.
-func (wrapper BittrexWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper BittrexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.bittrexAPI.SellLimit(market.Name, decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
