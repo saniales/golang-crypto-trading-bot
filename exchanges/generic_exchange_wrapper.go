@@ -19,16 +19,13 @@ import "github.com/saniales/golang-crypto-trading-bot/environment"
 
 //ExchangeWrapper provides a generic wrapper for exchange services.
 type ExchangeWrapper interface {
-	Name() string // Gets the name of the exchange.
-	//DEPRECATED
-	//GetCandles(market *environment.Market, interval string) error // Gets the candles of a market.
-	//GetMarkets() ([]*environment.Market, error) //Gets all the markets info.
-	GetTicker(market *environment.Market) error        //Gets the updated ticker for a market.
-	GetMarketSummary(market *environment.Market) error //Gets the current market summary.
-	//GetMarketSummaries(markets map[string]*environment.Market) error                    //Gets the current market summaries.
-	GetOrderBook(market *environment.Market) error                                       //Gets the order(ASK + BID) book of a market.
-	BuyLimit(market *environment.Market, amount float64, limit float64) (string, error)  //performs a limit buy action.
-	SellLimit(market *environment.Market, amount float64, limit float64) (string, error) //performs a limit sell action.
+	Name() string                                                                        // Gets the name of the exchange.
+	GetTicker(market *environment.Market) error                                          // Gets the updated ticker for a market.
+	GetMarketSummary(market *environment.Market) error                                   // Gets the current market summary.
+	GetOrderBook(market *environment.Market) error                                       // Gets the order(ASK + BID) book of a market.
+	BuyLimit(market *environment.Market, amount float64, limit float64) (string, error)  // Performs a limit buy action.
+	SellLimit(market *environment.Market, amount float64, limit float64) (string, error) // Performs a limit sell action.
+
 }
 
 // MarketNameFor gets the market name as seen by the exchange.
