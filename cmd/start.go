@@ -77,7 +77,17 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 
 	fmt.Print("Getting markets cold info ... ")
 	for _, strategyConf := range botConfig.Strategies {
-		err := strategies.MatchWithMarkets(strategyConf.Strategy, markets[strategyConf.Markets])
+		mkts := make([]*environment.Market, len(strategyConf.Markets))
+		for i, mkt := range strategyConf.Markets {
+			mkts[i] = &environment.Market{
+				Name: mkt.Name,
+			}
+
+			for _, exName := range mkt.Exchanges {
+				mkts[i].ExchangeNames[exName.Name] = exName.MarketName
+			}
+		}
+		err := strategies.MatchWithMarkets(strategyConf.Strategy, mkts)
 		if err != nil {
 			fmt.Println("Cannot add tactic : ", err)
 		}

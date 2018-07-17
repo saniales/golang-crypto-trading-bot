@@ -191,3 +191,24 @@ func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) error 
 	}
 	return nil
 }
+
+// CalculateTradingFees calculates the trading fees for an order on a specified market.
+//
+//     NOTE: In Kraken fees are currently hardcoded.
+func (wrapper KrakenWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+	var feePercentage float64
+	if orderType == MakerTrade {
+		feePercentage = 0.0016
+	} else if orderType == TakerTrade {
+		feePercentage = 0.0026
+	} else {
+		panic("Unknown trade type")
+	}
+
+	return amount * limit * feePercentage
+}
+
+// CalculateWithdrawFees calculates the withdrawal fees on a specified market.
+func (wrapper KrakenWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+	panic("Not Implemented")
+}

@@ -17,15 +17,26 @@ package exchanges
 
 import "github.com/saniales/golang-crypto-trading-bot/environment"
 
+// TradeType represents a type of order, from trading fees point of view.
+type TradeType string
+
+const (
+	// TakerTrade represents the "buy" order type.
+	TakerTrade = "taker"
+	// MakerTrade represents the "sell" order type.
+	MakerTrade = "maker"
+)
+
 //ExchangeWrapper provides a generic wrapper for exchange services.
 type ExchangeWrapper interface {
-	Name() string                                                                        // Gets the name of the exchange.
-	GetTicker(market *environment.Market) error                                          // Gets the updated ticker for a market.
-	GetMarketSummary(market *environment.Market) error                                   // Gets the current market summary.
-	GetOrderBook(market *environment.Market) error                                       // Gets the order(ASK + BID) book of a market.
-	BuyLimit(market *environment.Market, amount float64, limit float64) (string, error)  // Performs a limit buy action.
-	SellLimit(market *environment.Market, amount float64, limit float64) (string, error) // Performs a limit sell action.
-
+	Name() string                                                                                                // Gets the name of the exchange.
+	GetTicker(market *environment.Market) error                                                                  // Gets the updated ticker for a market.
+	GetMarketSummary(market *environment.Market) error                                                           // Gets the current market summary.
+	GetOrderBook(market *environment.Market) error                                                               // Gets the order(ASK + BID) book of a market.
+	BuyLimit(market *environment.Market, amount float64, limit float64) (string, error)                          // Performs a limit buy action.
+	SellLimit(market *environment.Market, amount float64, limit float64) (string, error)                         // Performs a limit sell action.
+	CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 // Calculates the trading fees for an order on a specified market.
+	CalculateWithdrawFees(market *environment.Market, amount float64) float64                                    // Calculates the withdrawal fees on a specified market.
 }
 
 // MarketNameFor gets the market name as seen by the exchange.

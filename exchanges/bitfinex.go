@@ -164,3 +164,24 @@ func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) erro
 	}
 	return nil
 }
+
+// CalculateTradingFees calculates the trading fees for an order on a specified market.
+//
+//     NOTE: In Bitfinex fees are currently hardcoded.
+func (wrapper BitfinexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+	var feePercentage float64
+	if orderType == MakerTrade {
+		feePercentage = 0.0010
+	} else if orderType == TakerTrade {
+		feePercentage = 0.0020
+	} else {
+		panic("Unknown trade type")
+	}
+
+	return amount * limit * feePercentage
+}
+
+// CalculateWithdrawFees calculates the withdrawal fees on a specified market.
+func (wrapper BitfinexWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+	panic("Not Implemented")
+}

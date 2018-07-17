@@ -168,3 +168,24 @@ func convertFromBittrexCandle(candle bittrexAPI.Candle) environment.CandleStick 
 		Low:   candle.Low,
 	}
 }
+
+// CalculateTradingFees calculates the trading fees for an order on a specified market.
+//
+//     NOTE: In Bittrex fees are hardcoded due to the inability to obtain them via API before placing an order.
+func (wrapper BittrexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+	var feePercentage float64
+	if orderType == MakerTrade {
+		feePercentage = 0.0025
+	} else if orderType == TakerTrade {
+		feePercentage = 0.0025
+	} else {
+		panic("Unknown trade type")
+	}
+
+	return amount * limit * feePercentage
+}
+
+// CalculateWithdrawFees calculates the withdrawal fees on a specified market.
+func (wrapper BittrexWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+	panic("Not Implemented")
+}

@@ -212,3 +212,24 @@ func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) error
 
 	return nil
 }
+
+// CalculateTradingFees calculates the trading fees for an order on a specified market.
+//
+//     NOTE: In Binance fees are currently hardcoded.
+func (wrapper BinanceWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+	var feePercentage float64
+	if orderType == MakerTrade {
+		feePercentage = 0.0010
+	} else if orderType == TakerTrade {
+		feePercentage = 0.0010
+	} else {
+		panic("Unknown trade type")
+	}
+
+	return amount * limit * feePercentage
+}
+
+// CalculateWithdrawFees calculates the withdrawal fees on a specified market.
+func (wrapper BinanceWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+	panic("Not Implemented")
+}

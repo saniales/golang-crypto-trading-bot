@@ -142,7 +142,7 @@ func generateInitFile() {
 			fmt.Scanln(&tmpMarketConf.Name)
 			for _, ex := range configs.ExchangeConfigs {
 				var exMarketName string
-				fmt.Println("Please Enter %s exchange market ticker, or leave empty to skip this exchange", ex.ExchangeName)
+				fmt.Printf("Please Enter %s exchange market ticker, or leave empty to skip this exchange\n", ex.ExchangeName)
 				fmt.Scanln(&exMarketName)
 
 				if exMarketName != "" {
