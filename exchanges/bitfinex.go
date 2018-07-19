@@ -2,7 +2,6 @@ package exchanges
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/shopspring/decimal"
 
@@ -48,26 +47,17 @@ func (wrapper BitfinexWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper BitfinexWrapper) GetOrderBook(market *environment.Market) error {
+func (wrapper BitfinexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	bitfinexOrderBook, err := wrapper.api.OrderBook.Get(MarketNameFor(market, wrapper), 0, 0, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if market.WatchedChart == nil {
-		market.WatchedChart = &environment.CandleStickChart{
-			// MarketName: market.Name,
-		}
-	} else {
-		market.WatchedChart.OrderBook = nil
-	}
-	totalLength := len(bitfinexOrderBook.Asks) + len(bitfinexOrderBook.Bids)
-	orders := make([]environment.Order, 0, totalLength)
+	var orderBook environment.OrderBook
 	for _, order := range bitfinexOrderBook.Bids {
 		amount, _ := decimal.NewFromString(order.Amount)
 		rate, _ := decimal.NewFromString(order.Rate)
-		orders = append(orders, environment.Order{
-			Type:     environment.Bid,
+		orderBook.Asks = append(orderBook.Asks, environment.Order{
 			Quantity: amount,
 			Value:    rate,
 		})
@@ -75,14 +65,13 @@ func (wrapper BitfinexWrapper) GetOrderBook(market *environment.Market) error {
 	for _, order := range bitfinexOrderBook.Asks {
 		amount, _ := decimal.NewFromString(order.Amount)
 		rate, _ := decimal.NewFromString(order.Rate)
-		orders = append(orders, environment.Order{
-			Type:     environment.Ask,
+		orderBook.Bids = append(orderBook.Bids, environment.Order{
 			Quantity: amount,
 			Value:    rate,
 		})
 	}
 
-	return nil
+	return &orderBook, nil
 }
 
 // BuyLimit performs a limit buy action.
@@ -104,48 +93,28 @@ func (wrapper BitfinexWrapper) SellLimit(market *environment.Market, amount floa
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper BitfinexWrapper) GetTicker(market *environment.Market) error {
+func (wrapper BitfinexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	bitfinexTicker, err := wrapper.api.Ticker.Get(MarketNameFor(market, wrapper))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	last, _ := decimal.NewFromString(bitfinexTicker.LastPrice)
 	ask, _ := decimal.NewFromString(bitfinexTicker.Ask)
 	bid, _ := decimal.NewFromString(bitfinexTicker.Bid)
 
-	market.Summary.UpdateFromTicker(environment.Ticker{
+	return &environment.Ticker{
 		Last: last,
 		Bid:  bid,
 		Ask:  ask,
-	})
-	return nil
-}
-
-// GetMarketSummaries get the markets summary of all markets
-//
-// WARNING: it panics on error, must be handled by a recover func somewhere
-func (wrapper BitfinexWrapper) GetMarketSummaries(markets map[string]*environment.Market) error {
-	var wg sync.WaitGroup
-	wg.Add(len(markets))
-	for _, market := range markets {
-		go func(wg *sync.WaitGroup, wrapper ExchangeWrapper, market *environment.Market) {
-			err := wrapper.GetMarketSummary(market)
-			if err != nil {
-				panic(err)
-			}
-			wg.Done()
-		}(&wg, wrapper, market)
-	}
-	wg.Wait()
-	return nil
+	}, nil
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) error {
+func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	bitfinexSummary, err := wrapper.api.Ticker.Get(MarketNameFor(market, wrapper))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	high, _ := decimal.NewFromString(bitfinexSummary.High)
@@ -154,15 +123,14 @@ func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) erro
 	bid, _ := decimal.NewFromString(bitfinexSummary.Bid)
 	ask, _ := decimal.NewFromString(bitfinexSummary.Ask)
 
-	market.Summary = environment.MarketSummary{
+	return &environment.MarketSummary{
 		High:   high,
 		Low:    low,
 		Volume: volume,
 		Bid:    bid,
 		Ask:    ask,
 		Last:   ask, // TODO: find a better way for last value, if any
-	}
-	return nil
+	}, nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.

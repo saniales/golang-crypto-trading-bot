@@ -17,7 +17,6 @@ package exchanges
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/beldur/kraken-go-api-client"
 	"github.com/fatih/structs"
@@ -69,26 +68,17 @@ func (wrapper KrakenWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) error {
+func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	krakenOrderBook, err := wrapper.api.Depth(MarketNameFor(market, wrapper), 0)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if market.WatchedChart == nil {
-		market.WatchedChart = &environment.CandleStickChart{
-			// MarketName: market.Name,
-		}
-	} else {
-		market.WatchedChart.OrderBook = nil
-	}
-	totalLength := len(krakenOrderBook.Asks) + len(krakenOrderBook.Bids)
-	orders := make([]environment.Order, 0, totalLength)
+	var orderBook environment.OrderBook
 	for _, order := range krakenOrderBook.Bids {
 		amount := decimal.NewFromFloat(order.Amount)
 		rate := decimal.NewFromFloat(order.Price)
-		orders = append(orders, environment.Order{
-			Type:     environment.Bid,
+		orderBook.Bids = append(orderBook.Bids, environment.Order{
 			Quantity: amount,
 			Value:    rate,
 		})
@@ -96,14 +86,13 @@ func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) error {
 	for _, order := range krakenOrderBook.Asks {
 		amount := decimal.NewFromFloat(order.Amount)
 		rate := decimal.NewFromFloat(order.Price)
-		orders = append(orders, environment.Order{
-			Type:     environment.Ask,
+		orderBook.Asks = append(orderBook.Asks, environment.Order{
 			Quantity: amount,
 			Value:    rate,
 		})
 	}
 
-	return nil
+	return &orderBook, nil
 }
 
 // BuyLimit performs a limit buy action.
@@ -127,10 +116,10 @@ func (wrapper KrakenWrapper) SellLimit(market *environment.Market, amount float6
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper KrakenWrapper) GetTicker(market *environment.Market) error {
+func (wrapper KrakenWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	krakenTicker, err := wrapper.api.Ticker(MarketNameFor(market, wrapper))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ticker := krakenTicker.GetPairTickerInfo(MarketNameFor(market, wrapper))
@@ -139,38 +128,18 @@ func (wrapper KrakenWrapper) GetTicker(market *environment.Market) error {
 	ask, _ := decimal.NewFromString(ticker.Ask[0])
 	bid, _ := decimal.NewFromString(ticker.Bid[0])
 
-	market.Summary.UpdateFromTicker(environment.Ticker{
+	return &environment.Ticker{
 		Last: last,
 		Bid:  bid,
 		Ask:  ask,
-	})
-	return nil
-}
-
-// GetMarketSummaries get the markets summary of all markets
-//
-// WARNING: it panics on error, must be handled by a recover func somewhere
-func (wrapper KrakenWrapper) GetMarketSummaries(markets map[string]*environment.Market) error {
-	var wg sync.WaitGroup
-	wg.Add(len(markets))
-	for _, market := range markets {
-		go func(wg *sync.WaitGroup, wrapper ExchangeWrapper, market *environment.Market) {
-			err := wrapper.GetMarketSummary(market)
-			if err != nil {
-				panic(err)
-			}
-			wg.Done()
-		}(&wg, wrapper, market)
-	}
-	wg.Wait()
-	return nil
+	}, nil
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) error {
+func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	krakenSummary, err := wrapper.api.Ticker(MarketNameFor(market, wrapper))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	sum := krakenSummary.GetPairTickerInfo(MarketNameFor(market, wrapper))
@@ -181,15 +150,14 @@ func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) error 
 	bid, _ := decimal.NewFromString(sum.Bid[0])
 	ask, _ := decimal.NewFromString(sum.Ask[0])
 
-	market.Summary = environment.MarketSummary{
+	return &environment.MarketSummary{
 		High:   high,
 		Low:    low,
 		Volume: volume,
 		Bid:    bid,
 		Ask:    ask,
 		Last:   ask, // TODO: find a better way for last value, if any
-	}
-	return nil
+	}, nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.

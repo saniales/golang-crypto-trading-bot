@@ -62,37 +62,27 @@ func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) error {
+func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(market.Name, "both")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if market.WatchedChart == nil {
-		market.WatchedChart = &environment.CandleStickChart{
-			// MarketName: market.Name,
-		}
-	} else {
-		market.WatchedChart.OrderBook = nil
-	}
-	totalLength := len(bittrexOrderBook.Buy) + len(bittrexOrderBook.Sell)
-	orders := make([]environment.Order, totalLength)
-	for i, order := range bittrexOrderBook.Buy {
-		orders[i] = environment.Order{
-			Type:     environment.Bid,
+	var orderBook environment.OrderBook
+	for _, order := range bittrexOrderBook.Buy {
+		orderBook.Bids = append(orderBook.Bids, environment.Order{
 			Quantity: order.Quantity,
 			Value:    order.Rate,
-		}
+		})
 	}
-	for i, order := range bittrexOrderBook.Sell {
-		orders[i+len(bittrexOrderBook.Buy)] = environment.Order{
-			Type:     environment.Ask,
+	for _, order := range bittrexOrderBook.Sell {
+		orderBook.Asks = append(orderBook.Asks, environment.Order{
 			Quantity: order.Quantity,
 			Value:    order.Rate,
-		}
+		})
 	}
 
-	return nil
+	return nil, nil
 }
 
 // BuyLimit performs a limit buy action.
@@ -108,55 +98,35 @@ func (wrapper BittrexWrapper) SellLimit(market *environment.Market, amount float
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper BittrexWrapper) GetTicker(market *environment.Market) error {
+func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	bittrexTicker, err := wrapper.bittrexAPI.GetTicker(market.Name)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	market.Summary.UpdateFromTicker(environment.Ticker{
+
+	return &environment.Ticker{
 		Last: bittrexTicker.Last,
 		Bid:  bittrexTicker.Bid,
 		Ask:  bittrexTicker.Ask,
-	})
-	return nil
-}
-
-// GetMarketSummaries get the markets summary of all markets
-func (wrapper BittrexWrapper) GetMarketSummaries(markets map[string]*environment.Market) error {
-	bittrexSummaries, err := wrapper.bittrexAPI.GetMarketSummaries()
-	if err != nil {
-		return err
-	}
-	for _, summary := range bittrexSummaries {
-		markets[summary.MarketName].Summary = environment.MarketSummary{
-			High:   summary.High,
-			Low:    summary.Low,
-			Volume: summary.Volume,
-			Bid:    summary.Bid,
-			Ask:    summary.Ask,
-			Last:   summary.Last,
-		}
-	}
-	return nil
+	}, nil
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) error {
+func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	summaryArray, err := wrapper.bittrexAPI.GetMarketSummary(market.Name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	summary := summaryArray[0]
 
-	market.Summary = environment.MarketSummary{
+	return &environment.MarketSummary{
 		High:   summary.High,
 		Low:    summary.Low,
 		Volume: summary.Volume,
 		Bid:    summary.Bid,
 		Ask:    summary.Ask,
 		Last:   summary.Last,
-	}
-	return nil
+	}, nil
 }
 
 //convertFromBittrexCandle converts a bittrex candle to a environment.CandleStick.

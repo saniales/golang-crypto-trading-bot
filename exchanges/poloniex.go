@@ -64,37 +64,27 @@ func (wrapper PoloniexWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper PoloniexWrapper) GetOrderBook(market *environment.Market) error {
+func (wrapper PoloniexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	poloniexOrderBook, err := wrapper.api.OrderBook(MarketNameFor(market, wrapper))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if market.WatchedChart == nil {
-		market.WatchedChart = &environment.CandleStickChart{
-			// MarketName: market.Name,
-		}
-	} else {
-		market.WatchedChart.OrderBook = nil
-	}
-	totalLength := len(poloniexOrderBook.Asks) + len(poloniexOrderBook.Bids)
-	orders := make([]environment.Order, totalLength)
-	for i, order := range poloniexOrderBook.Bids {
-		orders[i] = environment.Order{
-			Type:     environment.Bid,
+	var orderBook environment.OrderBook
+	for _, order := range poloniexOrderBook.Bids {
+		orderBook.Bids = append(orderBook.Bids, environment.Order{
 			Quantity: decimal.NewFromFloat(order.Amount),
 			Value:    decimal.NewFromFloat(order.Rate),
-		}
+		})
 	}
-	for i, order := range poloniexOrderBook.Asks {
-		orders[i+len(poloniexOrderBook.Asks)] = environment.Order{
-			Type:     environment.Ask,
+	for _, order := range poloniexOrderBook.Asks {
+		orderBook.Asks = append(orderBook.Asks, environment.Order{
 			Quantity: decimal.NewFromFloat(order.Amount),
 			Value:    decimal.NewFromFloat(order.Rate),
-		}
+		})
 	}
 
-	return nil
+	return &orderBook, nil
 }
 
 // BuyLimit performs a limit buy action.
@@ -110,76 +100,33 @@ func (wrapper PoloniexWrapper) SellLimit(market *environment.Market, amount floa
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper PoloniexWrapper) GetTicker(market *environment.Market) error {
+func (wrapper PoloniexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	poloniexTicker, err := wrapper.api.Ticker()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	ticker, exists := poloniexTicker[MarketNameFor(market, wrapper)]
 	if !exists {
-		return errors.New("Market not found")
+		return nil, errors.New("Market not found")
 	}
-	market.Summary.UpdateFromTicker(environment.Ticker{
+
+	return &environment.Ticker{
 		Last: decimal.NewFromFloat(ticker.Last),
 		Bid:  decimal.NewFromFloat(ticker.Bid),
 		Ask:  decimal.NewFromFloat(ticker.Ask),
-	})
-	return nil
-}
-
-// GetMarketSummaries get the markets summary of all markets
-func (wrapper PoloniexWrapper) GetMarketSummaries(markets map[string]*environment.Market) error {
-	panic("Not implemented")
-	/*
-		poloniexSummaries, err := wrapper.api. .GetMarketSummaries()
-		if err != nil {
-			return err
-		}
-		for _, summary := range poloniexSummaries {
-			markets[summary.MarketName].Summary = environment.MarketSummary{
-				High:   summary.High,
-				Low:    summary.Low,
-				Volume: summary.Volume,
-				Bid:    summary.Bid,
-				Ask:    summary.Ask,
-				Last:   summary.Last,
-			}
-		}
-		return nil
-	*/
+	}, nil
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper PoloniexWrapper) GetMarketSummary(market *environment.Market) error {
+func (wrapper PoloniexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	panic("Not implemented")
-	/*
-		volume, err := wrapper.api.DailyVolume()
-		if err != nil {
-			return err
-		}
-
-		ticker, err := wrapper.api.Ticker()
-		if err != nil {
-			return err
-		}
-
-
-		market.Summary = environment.MarketSummary{
-			High:   ticker[MarketNameFor(market, wrapper)]. ,
-			Low:    summary.Low,
-			Volume: decimal.NewFromFloat(volume[MarketNameFor(market, wrapper)]),
-			Bid:    summary.Bid,
-			Ask:    summary.Ask,
-			Last:   summary.Last,
-		}
-	*/
-	return nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Binance fees are currently hardcoded.
 func (wrapper PoloniexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+	// NOTE: possibility to use wrapper FeesInfo function.
 	var feePercentage float64
 	if orderType == MakerTrade {
 		feePercentage = 0.0010

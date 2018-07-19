@@ -30,9 +30,9 @@ const (
 //ExchangeWrapper provides a generic wrapper for exchange services.
 type ExchangeWrapper interface {
 	Name() string                                                                                                // Gets the name of the exchange.
-	GetTicker(market *environment.Market) error                                                                  // Gets the updated ticker for a market.
-	GetMarketSummary(market *environment.Market) error                                                           // Gets the current market summary.
-	GetOrderBook(market *environment.Market) error                                                               // Gets the order(ASK + BID) book of a market.
+	GetTicker(market *environment.Market) (*environment.Ticker, error)                                           // Gets the updated ticker for a market.
+	GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error)                             // Gets the current market summary.
+	GetOrderBook(market *environment.Market) (*environment.OrderBook, error)                                     // Gets the order(ASK + BID) book of a market.
 	BuyLimit(market *environment.Market, amount float64, limit float64) (string, error)                          // Performs a limit buy action.
 	SellLimit(market *environment.Market, amount float64, limit float64) (string, error)                         // Performs a limit sell action.
 	CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 // Calculates the trading fees for an order on a specified market.

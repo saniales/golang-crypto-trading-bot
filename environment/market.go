@@ -35,15 +35,11 @@ type Market struct {
 	Name           string            `json:"name,required"`            //Represents the name of the market as defined in general (e.g. ETH-BTC).
 	BaseCurrency   string            `json:"baseCurrency,omitempty"`   //Represents the base currency of the market.
 	MarketCurrency string            `json:"marketCurrency,omitempty"` //Represents the currency to exchange by using base currency.
-	WatchedChart   *CandleStickChart `json:"chart,omitempty"`          //Represents a map which contains all the charts watched currently by the bot.
-	Summary        MarketSummary     `json:"summary,required"`         //Represents the summary of the market.
 	ExchangeNames  map[string]string `json:"-"`                        // Represents the various names of the market on various exchanges.
 }
 
 func (m Market) String() string {
 	ret := fmt.Sprintln("Market", m.Name)
-	ret += fmt.Sprintln("Summary :")
-	ret += fmt.Sprintln(m.Summary)
 	return strings.TrimSpace(ret)
 }
 
