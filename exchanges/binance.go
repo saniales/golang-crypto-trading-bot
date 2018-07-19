@@ -143,7 +143,7 @@ func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) (*env
 	var binanceSummary *binance.PriceChangeStats
 
 	for _, val := range hilo {
-		if val.Symbol == market.Name {
+		if val.Symbol == MarketNameFor(market, wrapper) {
 			binanceSummary = val
 			break
 		}

@@ -119,7 +119,22 @@ func (wrapper PoloniexWrapper) GetTicker(market *environment.Market) (*environme
 
 // GetMarketSummary gets the current market summary.
 func (wrapper PoloniexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
-	panic("Not implemented")
+	poloniexSummaries, err := wrapper.api.Ticker()
+	if err != nil {
+		return nil, err
+	}
+
+	poloniexSummary, notExists := poloniexSummaries[MarketNameFor(market, wrapper)]
+	if notExists {
+		return nil, errors.New("Market not found")
+	}
+
+	return &environment.MarketSummary{
+		Ask:    decimal.NewFromFloat(poloniexSummary.Ask),
+		Bid:    decimal.NewFromFloat(poloniexSummary.Bid),
+		Last:   decimal.NewFromFloat(poloniexSummary.Last),
+		Volume: decimal.NewFromFloat(poloniexSummary.BaseVolume),
+	}, nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.

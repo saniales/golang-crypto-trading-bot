@@ -63,7 +63,7 @@ func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
-	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(market.Name, "both")
+	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(MarketNameFor(market, wrapper), "both")
 	if err != nil {
 		return nil, err
 	}
@@ -87,19 +87,19 @@ func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) (*environ
 
 // BuyLimit performs a limit buy action.
 func (wrapper BittrexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.bittrexAPI.BuyLimit(market.Name, decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
+	orderNumber, err := wrapper.bittrexAPI.BuyLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
 
 // SellLimit performs a limit sell action.
 func (wrapper BittrexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.bittrexAPI.SellLimit(market.Name, decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
+	orderNumber, err := wrapper.bittrexAPI.SellLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
 
 // GetTicker gets the updated ticker for a market.
 func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
-	bittrexTicker, err := wrapper.bittrexAPI.GetTicker(market.Name)
+	bittrexTicker, err := wrapper.bittrexAPI.GetTicker(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environmen
 
 // GetMarketSummary gets the current market summary.
 func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
-	summaryArray, err := wrapper.bittrexAPI.GetMarketSummary(market.Name)
+	summaryArray, err := wrapper.bittrexAPI.GetMarketSummary(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err
 	}

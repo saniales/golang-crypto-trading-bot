@@ -83,6 +83,8 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 				Name: mkt.Name,
 			}
 
+			mkts[i].ExchangeNames = make(map[string]string, len(wrappers))
+
 			for _, exName := range mkt.Exchanges {
 				mkts[i].ExchangeNames[exName.Name] = exName.MarketName
 			}
