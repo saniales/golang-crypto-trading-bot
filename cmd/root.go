@@ -30,8 +30,8 @@ const (
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "gobot",
-	Short: "USAGE gobot [OPTIONS].",
-	Long:  `USAGE gobot [OPTIONS] : see --help for details`,
+	Short: fmt.Sprintf("USAGE %s [OPTIONS]", os.Args[0]),
+	Long:  fmt.Sprintf(`USAGE %s [OPTIONS] : see --help for details`, os.Args[0]),
 	Run:   executeRootCommand,
 }
 
