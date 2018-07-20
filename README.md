@@ -1,18 +1,34 @@
 # golang-crypto-trading-bot
+
+[![Release](https://img.shields.io/github/downloads/saniales/golang-crypto-trading-bot/total.svg)](https://github.com/yangwenmai/how-to-add-badge-in-github-readme/releases)
+[![Documentation](https://godoc.org/github.com/saniales/golang-crypto-trading-bot?status.svg)](https://github.com/saniales/golang-crypto-trading-bot)
+[![Travis CI](https://img.shields.io/travis/saniales/golang-crypto-trading-bot.svg)]((https://github.com/saniales/golang-crypto-trading-bot))
+[![Go Report Card](https://goreportcard.com/badge/github.com/saniales/golang-crypto-trading-bot.svg?branch=master)](https://github.com/saniales/golang-crypto-trading-bot)
+[![GitHub release](https://img.shields.io/github/release/saniales/golang-crypto-trading-bot.svg)](https://github.com/saniales/golang-crypto-trading-bot/releases)
+[![license](https://img.shields.io/github/license/saniales/golang-crypto-trading-bot.svg?maxAge=2592000)](https://github.com/saniales/golang-crypto-trading-bot/LICENSE)
+
+
 A golang implementation of a console-based trading bot for cryptocurrency exchanges, can be deployed to heroku too. 
 
 # Supported Exchanges
-Bittrex, Poloniex (both works in progress)
+Bittrex, Poloniex, Binance, Bitfinex
 
 # Usage
-Create a strategy by implementing Strategy interface and add it to the bot, then compile and execute the bot specifying the --strategy flag and --exchange flag
 
-`go run gobot.go --exchange bittrex --strategy myCustomStrategyName`
+Download a release or directly build the code from this repository.
+``` bash
+$ go get github.com/saniales/golang-crypto-trading-bot
+```
 
-You can use the --simulate flag to avoid trade but just simulate them.
-There is also a --watch flag to print info about markets to the console continuously.
+If you need to, you can create a strategy and bind it to the bot:
+``` go
+import bot "github.com/saniales/golang-crypto-trading-bot/cmd"
 
-Kill the bot by using CTRL+C  or SIGINT signal (on linux, Command+C on MacOsX).
+bot.AddCustomStrategy(myStrategy)
+bot.Execute()
+```
+
+For strategy reference see the [godocs](https://godoc.org/github.com/saniales/golang-crypto-trading-bot).
 
 # Current version
 [pre-alpha 0.0.0.1]
