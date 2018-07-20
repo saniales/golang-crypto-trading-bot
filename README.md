@@ -8,7 +8,7 @@
 [![license](https://img.shields.io/github/license/saniales/golang-crypto-trading-bot.svg?maxAge=2592000)](https://github.com/saniales/golang-crypto-trading-bot/LICENSE)
 
 
-A golang implementation of a console-based trading bot for cryptocurrency exchanges, can be deployed to heroku too. 
+A golang implementation of a console-based trading bot for cryptocurrency exchanges. 
 
 ## Supported Exchanges
 Bittrex, Poloniex, Binance, Bitfinex and Kraken, other in progress.
