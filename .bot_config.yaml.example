@@ -1,0 +1,29 @@
+exchange_configs: 
+  - exchange: bittrex
+    public_key: your_bittrex_public_key
+    secret_key: your_bittrex_secret_key
+  - exchange: binance
+    public_key: your_binance_public_key
+    secret_key: your_binance_secret_key
+  - exchange: bitfinex
+    public_key: your_bitfinex_public_key
+    secret_key: your_bitfinex_secret_key
+strategies:
+  - strategy: your_strategy_name
+    markets:
+      - market: market_logical_name
+        bindings:
+        - exchange: bittrex
+          market_name: market_name_on_bittrex
+        - exchange: binance
+          market_name: market_name_on_binance
+        - exchange: bitfinex
+          market_name: market_name_on_bitfinex
+      - market: another_market_logical_name
+        bindings:
+        - exchange: bittrex
+          market_name: market_name_on_bittrex
+        - exchange: binance
+          market_name: market_name_on_binance
+        - exchange: bitfinex
+          market_name: market_name_on_bitfinex
