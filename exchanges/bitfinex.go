@@ -26,6 +26,10 @@ func (wrapper BitfinexWrapper) Name() string {
 	return "bitfinex"
 }
 
+func (wrapper BitfinexWrapper) String() string {
+	return wrapper.Name()
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper BitfinexWrapper) GetMarkets() ([]*environment.Market, error) {
 	bitfinexMarkets, err := wrapper.api.Pairs.All()

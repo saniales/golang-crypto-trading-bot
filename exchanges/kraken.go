@@ -43,6 +43,10 @@ func (wrapper KrakenWrapper) Name() string {
 	return "kraken"
 }
 
+func (wrapper KrakenWrapper) String() string {
+	return wrapper.Name()
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper KrakenWrapper) GetMarkets() ([]*environment.Market, error) {
 	krakenMarkets, err := wrapper.api.AssetPairs()

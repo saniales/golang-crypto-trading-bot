@@ -43,6 +43,10 @@ func (wrapper BinanceWrapper) Name() string {
 	return "binance"
 }
 
+func (wrapper BinanceWrapper) String() string {
+	return wrapper.Name()
+}
+
 // GetMarkets Gets all the markets info.
 func (wrapper BinanceWrapper) GetMarkets() ([]*environment.Market, error) {
 	binanceMarkets, err := wrapper.api.NewListPricesService().Do(context.Background())

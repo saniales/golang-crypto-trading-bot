@@ -43,6 +43,10 @@ func (wrapper PoloniexWrapper) Name() string {
 	return "poloniex"
 }
 
+func (wrapper PoloniexWrapper) String() string {
+	return wrapper.Name()
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper PoloniexWrapper) GetMarkets() ([]*environment.Market, error) {
 	poloniexMarkets, err := wrapper.api.Currencies()

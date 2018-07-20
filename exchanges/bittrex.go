@@ -42,6 +42,10 @@ func (wrapper BittrexWrapper) Name() string {
 	return "bittrex"
 }
 
+func (wrapper BittrexWrapper) String() string {
+	return wrapper.Name()
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 	bittrexMarkets, err := wrapper.bittrexAPI.GetMarkets()
