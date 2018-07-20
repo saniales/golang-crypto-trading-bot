@@ -17,6 +17,7 @@ package exchanges
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/beldur/kraken-go-api-client"
 	"github.com/fatih/structs"
