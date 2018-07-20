@@ -1,4 +1,4 @@
-package botHelpers
+package helpers
 
 import (
 	"github.com/saniales/golang-crypto-trading-bot/environment"
@@ -13,32 +13,12 @@ func InitExchange(exchangeConfig environment.ExchangeConfig) exchanges.ExchangeW
 	case "bittrexV2":
 		return exchanges.NewBittrexV2Wrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
 	case "poloniex":
-		return nil
-	case "yobit":
-		return nil
-	case "cryptopia":
-		return nil
+		return exchanges.NewPoloniexWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
+	case "binance":
+		return exchanges.NewBinanceWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
+	case "bitfinex":
+		return exchanges.NewBitfinexWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
 	default:
 		return nil
 	}
-}
-
-//InitMarkets uses ExchangeWrapper to find info about markets and initialize them.
-func InitMarkets(exchange exchanges.ExchangeWrapper) (map[string]*environment.Market, error) {
-	markets, err := exchange.GetMarkets()
-	if err != nil {
-		return nil, err
-	}
-
-	marketMap := make(map[string]*environment.Market, len(markets))
-	for _, market := range markets {
-		marketMap[market.Name] = market
-	}
-
-	err = exchange.GetMarketSummaries(marketMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return marketMap, nil
 }

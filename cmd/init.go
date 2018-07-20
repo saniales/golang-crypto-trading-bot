@@ -82,12 +82,42 @@ func initConfig() {
 
 func generateInitFile() {
 	configs := environment.BotConfig{}
-	fmt.Println("Which exchange are you going to use?")
-	fmt.Scanln(&configs.Exchange.ExchangeName)
-	fmt.Println("Please provide Public Key for that exchange.")
-	fmt.Scanln(&configs.Exchange.PublicKey)
-	fmt.Println("Please provide Secret Key for that exchange.")
-	fmt.Scanln(&configs.Exchange.SecretKey)
+	for {
+		var exchange environment.ExchangeConfig
+		var YesNo string
+
+		fmt.Println("Which exchange are you going to add?")
+		fmt.Scanln(&exchange.ExchangeName)
+
+		alreadyAdded := false
+		for _, ex := range configs.ExchangeConfigs {
+			if ex.ExchangeName == exchange.ExchangeName {
+				alreadyAdded = true
+				break
+			}
+		}
+
+		if alreadyAdded {
+			fmt.Println("Exchange already added, retry.")
+			continue
+		}
+
+		fmt.Println("Please provide Public Key for that exchange.")
+		fmt.Scanln(&exchange.PublicKey)
+		fmt.Println("Please provide Secret Key for that exchange.")
+		fmt.Scanln(&exchange.SecretKey)
+
+		configs.ExchangeConfigs = append(configs.ExchangeConfigs, exchange)
+
+		fmt.Println("Exchange Added")
+		for YesNo != "Y" && YesNo != "n" {
+			fmt.Println("Do you want to add another exchange? (Y/n)")
+			fmt.Scanln(&YesNo)
+		}
+		if YesNo == "n" {
+			break
+		}
+	}
 
 	for {
 		var YesNo string
@@ -98,13 +128,46 @@ func generateInitFile() {
 		if YesNo == "n" {
 			break
 		}
+
 		var tempStrategyAppliance environment.StrategyConfig
-		fmt.Println("Please Enter Market Name using short notation " +
-			"(e.g. BTC-ETH for a Bitcoin-Ethereum market).")
-		fmt.Scanln(&tempStrategyAppliance.Market)
+
 		fmt.Println("Please Enter The Name of the strategy you want to use\n" +
 			"in this market (must be in the system)")
 		fmt.Scanln(&tempStrategyAppliance.Strategy)
+
+		for {
+			var tmpMarketConf environment.MarketConfig
+			fmt.Println("Please Enter Market Name using short notation " +
+				"(e.g. BTC-ETH for a Bitcoin-Ethereum market).")
+			fmt.Scanln(&tmpMarketConf.Name)
+			for _, ex := range configs.ExchangeConfigs {
+				var exMarketName string
+				fmt.Printf("Please Enter %s exchange market ticker, or leave empty to skip this exchange\n", ex.ExchangeName)
+				fmt.Scanln(&exMarketName)
+
+				if exMarketName != "" {
+					tmpMarketConf.Exchanges = append(tmpMarketConf.Exchanges, environment.ExchangeBindingsConfig{
+						Name:       ex.ExchangeName,
+						MarketName: exMarketName,
+					})
+					fmt.Printf("Exchange %s CONFIGURED with Market Name %s\n", ex.ExchangeName, exMarketName)
+				} else {
+					fmt.Printf("Exchange %s SKIPPED\n", ex.ExchangeName)
+				}
+			}
+
+			tempStrategyAppliance.Markets = append(tempStrategyAppliance.Markets, tmpMarketConf)
+
+			var YesNo string
+			for YesNo != "Y" && YesNo != "n" {
+				fmt.Println("Do you want to add another market binded to this strategy? (Y/n)")
+				fmt.Scanln(&YesNo)
+			}
+			if YesNo == "n" {
+				break
+			}
+		}
+
 		configs.Strategies = append(configs.Strategies, tempStrategyAppliance)
 	}
 

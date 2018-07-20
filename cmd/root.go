@@ -30,8 +30,8 @@ const (
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "gobot",
-	Short: "USAGE gobot [OPTIONS].",
-	Long:  `USAGE gobot [OPTIONS] : see --help for details`,
+	Short: fmt.Sprintf("USAGE %s [OPTIONS]", os.Args[0]),
+	Long:  fmt.Sprintf(`USAGE %s [OPTIONS] : see --help for details`, os.Args[0]),
 	Run:   executeRootCommand,
 }
 
@@ -60,7 +60,7 @@ func init() {
 	RootCmd.PersistentFlags().CountVarP(&GlobalFlags.Verbose, "verbose", "v", "show verbose information when trading : use multiple times to increase verbosity level.")
 
 	RootCmd.Flags().BoolVarP(&rootFlags.Version, "version", "V", false, "show version information.")
-	RootCmd.PersistentFlags().StringVar(&GlobalFlags.ConfigFile, "config-file", "./.gobot", "Config file path (default : ./.gobot)")
+	RootCmd.PersistentFlags().StringVar(&GlobalFlags.ConfigFile, "config-file", "./.bot_config.yaml", "Config file path (default : ./.bot_config.yaml)")
 }
 
 func executeRootCommand(cmd *cobra.Command, args []string) {

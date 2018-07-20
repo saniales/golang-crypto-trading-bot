@@ -39,6 +39,15 @@ func NewKrakenWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	}
 }
 
+// Name returns the name of the wrapped exchange.
+func (wrapper KrakenWrapper) Name() string {
+	return "kraken"
+}
+
+func (wrapper KrakenWrapper) String() string {
+	return wrapper.Name()
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper KrakenWrapper) GetMarkets() ([]*environment.Market, error) {
 	krakenMarkets, err := wrapper.api.AssetPairs()
@@ -64,26 +73,17 @@ func (wrapper KrakenWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) error {
-	krakenOrderBook, err := wrapper.api.Depth(market.Name, 0)
+func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
+	krakenOrderBook, err := wrapper.api.Depth(MarketNameFor(market, wrapper), 0)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if market.WatchedChart == nil {
-		market.WatchedChart = &environment.CandleStickChart{
-			// MarketName: market.Name,
-		}
-	} else {
-		market.WatchedChart.OrderBook = nil
-	}
-	totalLength := len(krakenOrderBook.Asks) + len(krakenOrderBook.Bids)
-	orders := make([]environment.Order, 0, totalLength)
+	var orderBook environment.OrderBook
 	for _, order := range krakenOrderBook.Bids {
 		amount := decimal.NewFromFloat(order.Amount)
 		rate := decimal.NewFromFloat(order.Price)
-		orders = append(orders, environment.Order{
-			Type:     environment.Bid,
+		orderBook.Bids = append(orderBook.Bids, environment.Order{
 			Quantity: amount,
 			Value:    rate,
 		})
@@ -91,19 +91,18 @@ func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) error {
 	for _, order := range krakenOrderBook.Asks {
 		amount := decimal.NewFromFloat(order.Amount)
 		rate := decimal.NewFromFloat(order.Price)
-		orders = append(orders, environment.Order{
-			Type:     environment.Ask,
+		orderBook.Asks = append(orderBook.Asks, environment.Order{
 			Quantity: amount,
 			Value:    rate,
 		})
 	}
 
-	return nil
+	return &orderBook, nil
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper KrakenWrapper) BuyLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.AddOrder(market.Name, "buy", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
+func (wrapper KrakenWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "buy", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
 	if err != nil {
 		return "", err
 	}
@@ -113,8 +112,8 @@ func (wrapper KrakenWrapper) BuyLimit(market environment.Market, amount float64,
 // SellLimit performs a limit sell action.
 //
 // NOTE: In kraken buy and sell orders behave the same (the go kraken api automatically puts it on correct side)
-func (wrapper KrakenWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.AddOrder(market.Name, "sell", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
+func (wrapper KrakenWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "sell", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
 	if err != nil {
 		return "", err
 	}
@@ -122,53 +121,33 @@ func (wrapper KrakenWrapper) SellLimit(market environment.Market, amount float64
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper KrakenWrapper) GetTicker(market *environment.Market) error {
-	krakenTicker, err := wrapper.api.Ticker(market.Name)
+func (wrapper KrakenWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
+	krakenTicker, err := wrapper.api.Ticker(MarketNameFor(market, wrapper))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	ticker := krakenTicker.GetPairTickerInfo(market.Name)
+	ticker := krakenTicker.GetPairTickerInfo(MarketNameFor(market, wrapper))
 
 	last, _ := decimal.NewFromString(ticker.Close[0])
 	ask, _ := decimal.NewFromString(ticker.Ask[0])
 	bid, _ := decimal.NewFromString(ticker.Bid[0])
 
-	market.Summary.UpdateFromTicker(environment.Ticker{
+	return &environment.Ticker{
 		Last: last,
 		Bid:  bid,
 		Ask:  ask,
-	})
-	return nil
-}
-
-// GetMarketSummaries get the markets summary of all markets
-//
-// WARNING: it panics on error, must be handled by a recover func somewhere
-func (wrapper KrakenWrapper) GetMarketSummaries(markets map[string]*environment.Market) error {
-	var wg sync.WaitGroup
-	wg.Add(len(markets))
-	for _, market := range markets {
-		go func(wg *sync.WaitGroup, wrapper ExchangeWrapper, market *environment.Market) {
-			err := wrapper.GetMarketSummary(market)
-			if err != nil {
-				panic(err)
-			}
-			wg.Done()
-		}(&wg, wrapper, market)
-	}
-	wg.Wait()
-	return nil
+	}, nil
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) error {
-	krakenSummary, err := wrapper.api.Ticker(market.Name)
+func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
+	krakenSummary, err := wrapper.api.Ticker(MarketNameFor(market, wrapper))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	sum := krakenSummary.GetPairTickerInfo(market.Name)
+	sum := krakenSummary.GetPairTickerInfo(MarketNameFor(market, wrapper))
 
 	high, _ := decimal.NewFromString(sum.High[0])
 	low, _ := decimal.NewFromString(sum.Low[0])
@@ -176,13 +155,33 @@ func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) error 
 	bid, _ := decimal.NewFromString(sum.Bid[0])
 	ask, _ := decimal.NewFromString(sum.Ask[0])
 
-	market.Summary = environment.MarketSummary{
+	return &environment.MarketSummary{
 		High:   high,
 		Low:    low,
 		Volume: volume,
 		Bid:    bid,
 		Ask:    ask,
 		Last:   ask, // TODO: find a better way for last value, if any
+	}, nil
+}
+
+// CalculateTradingFees calculates the trading fees for an order on a specified market.
+//
+//     NOTE: In Kraken fees are currently hardcoded.
+func (wrapper KrakenWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+	var feePercentage float64
+	if orderType == MakerTrade {
+		feePercentage = 0.0016
+	} else if orderType == TakerTrade {
+		feePercentage = 0.0026
+	} else {
+		panic("Unknown trade type")
 	}
-	return nil
+
+	return amount * limit * feePercentage
+}
+
+// CalculateWithdrawFees calculates the withdrawal fees on a specified market.
+func (wrapper KrakenWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+	panic("Not Implemented")
 }

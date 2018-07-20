@@ -27,9 +27,14 @@ const (
 	Bid OrderType = iota
 )
 
+//OrderBook represents a standard orderbook implementation.
+type OrderBook struct {
+	Asks []Order `json:"asks,required"`
+	Bids []Order `json:"bids,required"`
+}
+
 //Order represents a single order in the Order Book for a market.
 type Order struct {
-	Type        OrderType       //Type of the order. Can be Ask or Bid.
 	Value       decimal.Decimal //Value of the trade : e.g. in a BTC ETH is the value of a single ETH in BTC.
 	Quantity    decimal.Decimal //Quantity of Coins of this order.
 	OrderNumber string          //[optional]Order number as seen in echange archives.

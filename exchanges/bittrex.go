@@ -37,6 +37,15 @@ func NewBittrexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	}
 }
 
+// Name returns the name of the wrapped exchange.
+func (wrapper BittrexWrapper) Name() string {
+	return "bittrex"
+}
+
+func (wrapper BittrexWrapper) String() string {
+	return wrapper.Name()
+}
+
 // GetMarkets gets all the markets info.
 func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 	bittrexMarkets, err := wrapper.bittrexAPI.GetMarkets()
@@ -57,101 +66,71 @@ func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) error {
-	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(market.Name, "both")
+func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
+	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(MarketNameFor(market, wrapper), "both")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if market.WatchedChart == nil {
-		market.WatchedChart = &environment.CandleStickChart{
-			// MarketName: market.Name,
-		}
-	} else {
-		market.WatchedChart.OrderBook = nil
-	}
-	totalLength := len(bittrexOrderBook.Buy) + len(bittrexOrderBook.Sell)
-	orders := make([]environment.Order, totalLength)
-	for i, order := range bittrexOrderBook.Buy {
-		orders[i] = environment.Order{
-			Type:     environment.Bid,
+	var orderBook environment.OrderBook
+	for _, order := range bittrexOrderBook.Buy {
+		orderBook.Bids = append(orderBook.Bids, environment.Order{
 			Quantity: order.Quantity,
 			Value:    order.Rate,
-		}
+		})
 	}
-	for i, order := range bittrexOrderBook.Sell {
-		orders[i+len(bittrexOrderBook.Buy)] = environment.Order{
-			Type:     environment.Ask,
+	for _, order := range bittrexOrderBook.Sell {
+		orderBook.Asks = append(orderBook.Asks, environment.Order{
 			Quantity: order.Quantity,
 			Value:    order.Rate,
-		}
+		})
 	}
 
-	return nil
+	return nil, nil
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper BittrexWrapper) BuyLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.bittrexAPI.BuyLimit(market.Name, decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
+func (wrapper BittrexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.bittrexAPI.BuyLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
 
 // SellLimit performs a limit sell action.
-func (wrapper BittrexWrapper) SellLimit(market environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.bittrexAPI.SellLimit(market.Name, decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
+func (wrapper BittrexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+	orderNumber, err := wrapper.bittrexAPI.SellLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper BittrexWrapper) GetTicker(market *environment.Market) error {
-	bittrexTicker, err := wrapper.bittrexAPI.GetTicker(market.Name)
+func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
+	bittrexTicker, err := wrapper.bittrexAPI.GetTicker(MarketNameFor(market, wrapper))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	market.Summary.UpdateFromTicker(environment.Ticker{
+
+	return &environment.Ticker{
 		Last: bittrexTicker.Last,
 		Bid:  bittrexTicker.Bid,
 		Ask:  bittrexTicker.Ask,
-	})
-	return nil
-}
-
-// GetMarketSummaries get the markets summary of all markets
-func (wrapper BittrexWrapper) GetMarketSummaries(markets map[string]*environment.Market) error {
-	bittrexSummaries, err := wrapper.bittrexAPI.GetMarketSummaries()
-	if err != nil {
-		return err
-	}
-	for _, summary := range bittrexSummaries {
-		markets[summary.MarketName].Summary = environment.MarketSummary{
-			High:   summary.High,
-			Low:    summary.Low,
-			Volume: summary.Volume,
-			Bid:    summary.Bid,
-			Ask:    summary.Ask,
-			Last:   summary.Last,
-		}
-	}
-	return nil
+	}, nil
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) error {
-	summaryArray, err := wrapper.bittrexAPI.GetMarketSummary(market.Name)
+func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
+	summaryArray, err := wrapper.bittrexAPI.GetMarketSummary(MarketNameFor(market, wrapper))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	summary := summaryArray[0]
 
-	market.Summary = environment.MarketSummary{
+	return &environment.MarketSummary{
 		High:   summary.High,
 		Low:    summary.Low,
 		Volume: summary.Volume,
 		Bid:    summary.Bid,
 		Ask:    summary.Ask,
 		Last:   summary.Last,
-	}
-	return nil
+	}, nil
 }
 
 //convertFromBittrexCandle converts a bittrex candle to a environment.CandleStick.
@@ -162,4 +141,25 @@ func convertFromBittrexCandle(candle bittrexAPI.Candle) environment.CandleStick 
 		Close: candle.Close,
 		Low:   candle.Low,
 	}
+}
+
+// CalculateTradingFees calculates the trading fees for an order on a specified market.
+//
+//     NOTE: In Bittrex fees are hardcoded due to the inability to obtain them via API before placing an order.
+func (wrapper BittrexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+	var feePercentage float64
+	if orderType == MakerTrade {
+		feePercentage = 0.0025
+	} else if orderType == TakerTrade {
+		feePercentage = 0.0025
+	} else {
+		panic("Unknown trade type")
+	}
+
+	return amount * limit * feePercentage
+}
+
+// CalculateWithdrawFees calculates the withdrawal fees on a specified market.
+func (wrapper BittrexWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+	panic("Not Implemented")
 }
