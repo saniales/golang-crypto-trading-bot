@@ -157,6 +157,15 @@ func generateInitFile() {
 			}
 
 			tempStrategyAppliance.Markets = append(tempStrategyAppliance.Markets, tmpMarketConf)
+
+			var YesNo string
+			for YesNo != "Y" && YesNo != "n" {
+				fmt.Println("Do you want to add another market binded to this strategy? (Y/n)")
+				fmt.Scanln(&YesNo)
+			}
+			if YesNo == "n" {
+				break
+			}
 		}
 
 		configs.Strategies = append(configs.Strategies, tempStrategyAppliance)
