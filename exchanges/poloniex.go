@@ -28,7 +28,8 @@ import (
 
 // PoloniexWrapper provides a Generic wrapper of the Poloniex API.
 type PoloniexWrapper struct {
-	api *poloniex.Poloniex // access to Poloniex API
+	api          *poloniex.Poloniex // access to Poloniex API
+	tickerFeedUp bool               // if true ticket service for all currencies is on.
 }
 
 // NewPoloniexWrapper creates a generic wrapper of the poloniex API.
@@ -161,4 +162,55 @@ func (wrapper PoloniexWrapper) CalculateTradingFees(market *environment.Market, 
 // CalculateWithdrawFees calculates the withdrawal fees on a specified market.
 func (wrapper PoloniexWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
 	panic("Not Implemented")
+}
+
+// FeedConnect connects to the feed of the poloniex websocket.
+func (wrapper PoloniexWrapper) FeedConnect() {
+	wrapper.api.StartWS()
+}
+
+var bindedTickers map[string]bool
+
+// SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
+func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
+	if !wrapper.tickerFeedUp {
+		wrapper.api.Subscribe("ticker")
+
+		wrapper.api.On("ticker", func(t poloniex.Ticker) {
+			for bindedTicker := range bindedTickers {
+				if bindedTicker == t.PairID {
+					wrapper.api.Emit(subTicker, t)
+				}
+			}
+		})
+		wrapper.tickerFeedUp = true
+	}
+
+	if _, exists := bindedTickers[MarketNameFor(market, wrapper)]; !exists {
+		bindedTickers[MarketNameFor(market, wrapper)] = true
+
+		wrapper.api.On(subTicker, func(t poloniex.WSTicker) {
+			onUpdate(environment.MarketSummary{
+				High:   t.DailyHigh,
+				Low:    t.DailyLow,
+				Last:   t.Last,
+				Ask:    t.Ask,
+				Bid:    t.Bid,
+				Volume: t.BaseVolume,
+			})
+		})
+	}
+
+}
+
+// FeedDisconnect connects to the feed of the poloniex websocket.
+func (wrapper PoloniexWrapper) FeedDisconnect(market *environment.Market) {
+	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
+	wrapper.api.Off(subTicker)
+	delete(bindedTickers[MarketNameFor(market, wrapper)])
+
+	if len(bindedTickers) == 0 {
+		wrapper.api.Unsubscribe("ticker")
+	}
 }
