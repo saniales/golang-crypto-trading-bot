@@ -28,8 +28,7 @@ import (
 
 // PoloniexWrapper provides a Generic wrapper of the Poloniex API.
 type PoloniexWrapper struct {
-	api          *poloniex.Poloniex // access to Poloniex API
-	tickerFeedUp bool               // if true ticket service for all currencies is on.
+	api *poloniex.Poloniex // access to Poloniex API
 }
 
 // NewPoloniexWrapper creates a generic wrapper of the poloniex API.
@@ -174,7 +173,7 @@ var bindedTickers map[string]bool
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
 	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
-	if !wrapper.tickerFeedUp {
+	if len(bindedTickers) == 0 {
 		wrapper.api.Subscribe("ticker")
 
 		wrapper.api.On("ticker", func(t poloniex.Ticker) {
@@ -204,8 +203,8 @@ func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Ma
 
 }
 
-// FeedDisconnect connects to the feed of the poloniex websocket.
-func (wrapper PoloniexWrapper) FeedDisconnect(market *environment.Market) {
+// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
+func (wrapper PoloniexWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
 	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
 	wrapper.api.Off(subTicker)
 	delete(bindedTickers[MarketNameFor(market, wrapper)])
