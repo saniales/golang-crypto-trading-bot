@@ -15,7 +15,9 @@
 
 package exchanges
 
-import "github.com/saniales/golang-crypto-trading-bot/environment"
+import (
+	"github.com/saniales/golang-crypto-trading-bot/environment"
+)
 
 // TradeType represents a type of order, from trading fees point of view.
 type TradeType string
@@ -37,6 +39,10 @@ type ExchangeWrapper interface {
 	SellLimit(market *environment.Market, amount float64, limit float64) (string, error)                         // Performs a limit sell action.
 	CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 // Calculates the trading fees for an order on a specified market.
 	CalculateWithdrawFees(market *environment.Market, amount float64) float64                                    // Calculates the withdrawal fees on a specified market.
+
+	FeedConnect()                                                                                     // Connects to the feed of the exchange.
+	SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(*environment.MarketSummary)) // Subscribes to the Market Summary Feed service.
+	UnsubscribeMarketSummaryFeed(market *environment.Market)                                          // Unsubscribes from the Market Summary Feed service.                                                                                       // Disconnects from the feed
 }
 
 // MarketNameFor gets the market name as seen by the exchange.
