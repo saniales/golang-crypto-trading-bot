@@ -157,3 +157,24 @@ func (wrapper BitfinexWrapper) CalculateTradingFees(market *environment.Market, 
 func (wrapper BitfinexWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
 	panic("Not Implemented")
 }
+
+func (wrapper BitfinexWrapper) FeedConnect() {
+	err := wrapper.api.WebSocket.Connect()
+	if err != nil {
+		panic(err)
+	}
+
+	
+}
+
+func (wrapper BitfinexWrapper) SubscribearketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+	results := make(chan []float64)
+	wrapper.api.WebSocket.AddSubscribe("ticker", MarketNameFor(market, wrapper), results)
+	for {
+
+	}
+}
+
+func (wrapper BitfinexWrapper) UnsubscribeMarketSummaryFeed() {
+	wrapper.api.WebSocket.	
+}

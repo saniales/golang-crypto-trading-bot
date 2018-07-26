@@ -42,7 +42,11 @@ type ExchangeWrapper interface {
 
 	FeedConnect()                                                                                     // Connects to the feed of the exchange.
 	SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(*environment.MarketSummary)) // Subscribes to the Market Summary Feed service.
+<<<<<<< HEAD
 	UnsubscribeMarketSummaryFeed(market *environment.Market)                                          // Unsubscribes from the Market Summary Feed service.                                                                                       // Disconnects from the feed
+=======
+	UnsubscribeMarketSummaryFeed(market *environment.Market)                                          // Unsubscribes from the Market Summary Feed service.
+>>>>>>> bitfinex ws draft
 }
 
 // MarketNameFor gets the market name as seen by the exchange.
