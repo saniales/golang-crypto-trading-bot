@@ -23,25 +23,27 @@ import (
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
 	"github.com/shomali11/slacker"
+	"github.com/sirupsen/logrus"
 )
 
-var bot *slacker.Slacker
+var slackBot *slacker.Slacker
 
 // The following slack integration allows to send messages as a strategy.
-// RTM not supported (and usually not requested when trading, this is an automated bot).
+// RTM not supported (and usually not requested when trading, this is an automated slackBot).
 var slackIntegrationExample = IntervalStrategy{
 	Model: StrategyModel{
+		Name: "slackIntegrationExample",
 		Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			// connect slack token
-			bot = slacker.NewClient("YOUR-TOKEN-HERE")
-			bot.Init(func() {
-				log.Println("Slackbot Connected")
+			slackBot = slacker.NewClient("YOUR-TOKEN-HERE")
+			slackBot.Init(func() {
+				log.Println("Slack BOT Connected")
 			})
-			bot.Err(func(err string) {
-				log.Println("Error during slack bot connection: ", err)
+			slackBot.Err(func(err string) {
+				log.Println("Error during slack slackBot connection: ", err)
 			})
 			go func() {
-				err := bot.Listen()
+				err := slackBot.Listen()
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -50,11 +52,11 @@ var slackIntegrationExample = IntervalStrategy{
 		},
 		OnUpdate: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			//if updates has requirements
-			_, _, err := bot.Client.PostMessage("DESIRED-CHANNEL", "OMG something happening!!!!!", slack.PostMessageParameters{})
+			_, _, err := slackBot.Client.PostMessage("DESIRED-CHANNEL", "OMG something happening!!!!!", slack.PostMessageParameters{})
 			return err
 		},
 		OnError: func(err error) {
-			bot.Client.PostMessage("DESIRED-CHANNEL", "Got An Error: "+err.Error(), slack.PostMessageParameters{})
+			logrus.Errorf("I Got an error %s", err)
 		},
 	},
 	Interval: time.Second * 10,
