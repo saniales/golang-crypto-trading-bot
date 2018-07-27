@@ -28,13 +28,15 @@ import (
 
 // PoloniexWrapper provides a Generic wrapper of the Poloniex API.
 type PoloniexWrapper struct {
-	api *poloniex.Poloniex // access to Poloniex API
+	api          *poloniex.Poloniex // access to Poloniex API
+	tickerFeedUp bool               // if true, i am subscribing to market ticker.
 }
 
 // NewPoloniexWrapper creates a generic wrapper of the poloniex API.
 func NewPoloniexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return PoloniexWrapper{
-		api: poloniex.NewWithCredentials(publicKey, secretKey),
+		api:          poloniex.NewWithCredentials(publicKey, secretKey),
+		tickerFeedUp: false,
 	}
 }
 
@@ -176,9 +178,10 @@ func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Ma
 	if len(bindedTickers) == 0 {
 		wrapper.api.Subscribe("ticker")
 
-		wrapper.api.On("ticker", func(t poloniex.Ticker) {
+		wrapper.api.On("ticker", func(t poloniex.WSTicker) {
 			for bindedTicker := range bindedTickers {
-				if bindedTicker == t.PairID {
+
+				if bindedTicker == t.Pair {
 					wrapper.api.Emit(subTicker, t)
 				}
 			}
@@ -191,12 +194,12 @@ func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Ma
 
 		wrapper.api.On(subTicker, func(t poloniex.WSTicker) {
 			onUpdate(environment.MarketSummary{
-				High:   t.DailyHigh,
-				Low:    t.DailyLow,
-				Last:   t.Last,
-				Ask:    t.Ask,
-				Bid:    t.Bid,
-				Volume: t.BaseVolume,
+				High:   decimal.NewFromFloat(t.DailyHigh),
+				Low:    decimal.NewFromFloat(t.DailyLow),
+				Last:   decimal.NewFromFloat(t.Last),
+				Ask:    decimal.NewFromFloat(t.Ask),
+				Bid:    decimal.NewFromFloat(t.Bid),
+				Volume: decimal.NewFromFloat(t.BaseVolume),
 			})
 		})
 	}
@@ -206,8 +209,8 @@ func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Ma
 // UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
 func (wrapper PoloniexWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
 	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
-	wrapper.api.Off(subTicker)
-	delete(bindedTickers[MarketNameFor(market, wrapper)])
+	wrapper.api.Off(subTicker, func() {})
+	delete(bindedTickers, MarketNameFor(market, wrapper))
 
 	if len(bindedTickers) == 0 {
 		wrapper.api.Unsubscribe("ticker")
