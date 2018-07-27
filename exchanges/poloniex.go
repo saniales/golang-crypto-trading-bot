@@ -28,15 +28,15 @@ import (
 
 // PoloniexWrapper provides a Generic wrapper of the Poloniex API.
 type PoloniexWrapper struct {
-	api          *poloniex.Poloniex // access to Poloniex API
-	tickerFeedUp bool               // if true, i am subscribing to market ticker.
+	api           *poloniex.Poloniex // access to Poloniex API
+	bindedTickers map[string]bool    // if true, i am subscribing to market ticker.
 }
 
 // NewPoloniexWrapper creates a generic wrapper of the poloniex API.
 func NewPoloniexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return PoloniexWrapper{
-		api:          poloniex.NewWithCredentials(publicKey, secretKey),
-		tickerFeedUp: false,
+		api:           poloniex.NewWithCredentials(publicKey, secretKey),
+		bindedTickers: make(map[string]bool),
 	}
 }
 
@@ -170,27 +170,24 @@ func (wrapper PoloniexWrapper) FeedConnect() {
 	wrapper.api.StartWS()
 }
 
-var bindedTickers map[string]bool
-
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
 	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
-	if len(bindedTickers) == 0 {
+	if len(wrapper.bindedTickers) == 0 {
 		wrapper.api.Subscribe("ticker")
 
 		wrapper.api.On("ticker", func(t poloniex.WSTicker) {
-			for bindedTicker := range bindedTickers {
+			for bindedTicker := range wrapper.bindedTickers {
 
 				if bindedTicker == t.Pair {
 					wrapper.api.Emit(subTicker, t)
 				}
 			}
 		})
-		wrapper.tickerFeedUp = true
 	}
 
-	if _, exists := bindedTickers[MarketNameFor(market, wrapper)]; !exists {
-		bindedTickers[MarketNameFor(market, wrapper)] = true
+	if _, exists := wrapper.bindedTickers[MarketNameFor(market, wrapper)]; !exists {
+		wrapper.bindedTickers[MarketNameFor(market, wrapper)] = true
 
 		wrapper.api.On(subTicker, func(t poloniex.WSTicker) {
 			onUpdate(environment.MarketSummary{
@@ -210,9 +207,9 @@ func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Ma
 func (wrapper PoloniexWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
 	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
 	wrapper.api.Off(subTicker, func() {})
-	delete(bindedTickers, MarketNameFor(market, wrapper))
+	delete(wrapper.bindedTickers, MarketNameFor(market, wrapper))
 
-	if len(bindedTickers) == 0 {
+	if len(wrapper.bindedTickers) == 0 {
 		wrapper.api.Unsubscribe("ticker")
 	}
 }
