@@ -40,6 +40,7 @@ type ExchangeWrapper interface {
 	CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 // Calculates the trading fees for an order on a specified market.
 	CalculateWithdrawFees(market *environment.Market, amount float64) float64                                    // Calculates the withdrawal fees on a specified market.
 
+<<<<<<< HEAD
 	FeedConnect()                                                                                     // Connects to the feed of the exchange.
 	SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(*environment.MarketSummary)) // Subscribes to the Market Summary Feed service.
 <<<<<<< HEAD
@@ -47,6 +48,11 @@ type ExchangeWrapper interface {
 =======
 	UnsubscribeMarketSummaryFeed(market *environment.Market)                                          // Unsubscribes from the Market Summary Feed service.
 >>>>>>> bitfinex ws draft
+=======
+	FeedConnect()                                                                                    // Connects to the feed of the exchange.
+	SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) // Subscribes to the Market Summary Feed service.
+	UnsubscribeMarketSummaryFeed(market *environment.Market)                                         // Unsubscribes from the Market Summary Feed service.
+>>>>>>> adding bitfinex and binance support, adjusting other exchanges to match interface
 }
 
 // MarketNameFor gets the market name as seen by the exchange.

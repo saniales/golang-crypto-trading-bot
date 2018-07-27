@@ -131,3 +131,24 @@ func (wrapper BittrexWrapperV2) CalculateTradingFees(market *environment.Market,
 func (wrapper BittrexWrapperV2) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
 	panic("Not Implemented")
 }
+
+// FeedConnect connects to the feed of the exchange.
+//
+//     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
+func (wrapper BittrexWrapperV2) FeedConnect() {
+	panic("Not Implemented")
+}
+
+// SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
+//
+//     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
+func (wrapper BittrexWrapperV2) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+	panic("Not Implemented")
+}
+
+// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
+//
+//     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
+func (wrapper BittrexWrapperV2) UnsubscribeMarketSummaryFeed(market *environment.Market) {
+	panic("Not Implemented")
+}
