@@ -193,3 +193,53 @@ func (wrapper BinanceWrapper) CalculateTradingFees(market *environment.Market, a
 func (wrapper BinanceWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
 	panic("Not Implemented")
 }
+
+// FeedConnect connects to the feed of the exchange.
+func (wrapper BinanceWrapper) FeedConnect() {
+	//empty
+}
+
+var unsubscribe = make(map[string]chan struct{})
+var unsubscribed = make(map[string]chan struct{})
+
+// SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
+func (wrapper BinanceWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+	doneC, stopC, err := binance.WsMarketStatServe(MarketNameFor(market, wrapper), func(event *binance.WsMarketStatEvent) {
+		high, _ := decimal.NewFromString(event.HighPrice)
+		low, _ := decimal.NewFromString(event.LowPrice)
+		ask, _ := decimal.NewFromString(event.AskPrice)
+		bid, _ := decimal.NewFromString(event.BidPrice)
+		last, _ := decimal.NewFromString(event.LastPrice)
+		volume, _ := decimal.NewFromString(event.BaseVolume)
+
+		onUpdate(environment.MarketSummary{
+			High:   high,
+			Low:    low,
+			Ask:    ask,
+			Bid:    bid,
+			Last:   last,
+			Volume: volume,
+		})
+	}, func(error) {})
+
+	if err != nil {
+		panic(err)
+	}
+
+	unsubscribe[MarketNameFor(market, wrapper)] = stopC
+	unsubscribed[MarketNameFor(market, wrapper)] = doneC
+}
+
+// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
+func (wrapper BinanceWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
+	tickerKey := MarketNameFor(market, wrapper)
+
+	unsubscribe[tickerKey] <- struct{}{}
+
+	<-unsubscribed[tickerKey]
+
+	close(unsubscribe[tickerKey])
+	close(unsubscribed[tickerKey])
+	delete(unsubscribe, tickerKey)
+	delete(unsubscribed, tickerKey)
+}

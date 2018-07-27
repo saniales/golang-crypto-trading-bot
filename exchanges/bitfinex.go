@@ -11,13 +11,15 @@ import (
 
 // BitfinexWrapper provides a Generic wrapper of the Bitfinex API.
 type BitfinexWrapper struct {
-	api *bitfinex.Client
+	api                 *bitfinex.Client
+	unsubscribeChannels map[string]chan bool
 }
 
 // NewBitfinexWrapper creates a generic wrapper of the bittrex API.
 func NewBitfinexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return BitfinexWrapper{
-		api: bitfinex.NewClient().Auth(publicKey, secretKey),
+		api:                 bitfinex.NewClient().Auth(publicKey, secretKey),
+		unsubscribeChannels: make(map[string]chan bool),
 	}
 }
 
@@ -158,23 +160,61 @@ func (wrapper BitfinexWrapper) CalculateWithdrawFees(market *environment.Market,
 	panic("Not Implemented")
 }
 
+// FeedConnect connects to the feed of the exchange.
 func (wrapper BitfinexWrapper) FeedConnect() {
 	err := wrapper.api.WebSocket.Connect()
 	if err != nil {
 		panic(err)
 	}
-
-	
 }
 
-func (wrapper BitfinexWrapper) SubscribearketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+// SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
+//
+//     NOTE: Content of result array
+//     BID	float	Price of last highest bid
+//     BID_SIZE	float	Size of the last highest bid
+//     ASK	float	Price of last lowest ask
+//     ASK_SIZE	float	Size of the last lowest ask
+//     DAILY_CHANGE	float	Amount that the last price has changed since yesterday
+//     DAILY_CHANGE_PERC	float	Amount that the price has changed expressed in percentage terms
+//     LAST_PRICE	float	Price of the last trade.
+//     VOLUME	float	Daily volume
+//     HIGH	float	Daily high
+//     LOW	float	Daily low
+func (wrapper BitfinexWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
 	results := make(chan []float64)
-	wrapper.api.WebSocket.AddSubscribe("ticker", MarketNameFor(market, wrapper), results)
-	for {
+	tickerKey := MarketNameFor(market, wrapper)
 
-	}
+	wrapper.api.WebSocket.AddSubscribe("ticker", tickerKey, results)
+
+	wrapper.unsubscribeChannels[MarketNameFor(market, wrapper)] = make(chan bool, 1)
+
+	go func(results <-chan []float64, tickerKey string) {
+		for {
+			select {
+			case values := <-results:
+				onUpdate(environment.MarketSummary{
+					Bid:    decimal.NewFromFloat(values[0]),
+					Ask:    decimal.NewFromFloat(values[2]),
+					Volume: decimal.NewFromFloat(values[7]),
+					High:   decimal.NewFromFloat(values[8]),
+					Low:    decimal.NewFromFloat(values[9]),
+				})
+			case <-wrapper.unsubscribeChannels[tickerKey]:
+				close(wrapper.unsubscribeChannels[tickerKey])
+				delete(wrapper.unsubscribeChannels, tickerKey)
+				if len(wrapper.unsubscribeChannels) == 0 {
+					wrapper.api.WebSocket.ClearSubscriptions()
+				}
+				return
+			}
+		}
+	}(results, tickerKey)
 }
 
-func (wrapper BitfinexWrapper) UnsubscribeMarketSummaryFeed() {
-	wrapper.api.WebSocket.	
+// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
+func (wrapper BitfinexWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
+	if _, subscribedToFeed := wrapper.unsubscribeChannels[MarketNameFor(market, wrapper)]; subscribedToFeed {
+		wrapper.unsubscribeChannels[MarketNameFor(market, wrapper)] <- true
+	}
 }

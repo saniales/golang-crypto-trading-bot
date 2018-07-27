@@ -184,3 +184,18 @@ func (wrapper KrakenWrapper) CalculateTradingFees(market *environment.Market, am
 func (wrapper KrakenWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
 	panic("Not Implemented")
 }
+
+// FeedConnect connects to the feed of the exchange.
+func (wrapper KrakenWrapper) FeedConnect() {
+	panic("Not Implemented")
+}
+
+// SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
+func (wrapper KrakenWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+	panic("Not Implemented")
+}
+
+// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
+func (wrapper KrakenWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
+	panic("Not Implemented")
+}
