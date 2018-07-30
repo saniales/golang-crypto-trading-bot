@@ -40,10 +40,13 @@ type ExchangeWrapper interface {
 	CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 // Calculates the trading fees for an order on a specified market.
 	CalculateWithdrawFees(market *environment.Market, amount float64) float64                                    // Calculates the withdrawal fees on a specified market.
 
-	FeedConnect()                                                                                    // Connects to the feed of the exchange.
-	SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) // Subscribes to the Market Summary Feed service.
-	UnsubscribeMarketSummaryFeed(market *environment.Market)                                         // Unsubscribes from the Market Summary Feed service.
+	FeedConnect()                                            // Connects to the feed of the exchange.
+	SubscribeMarketSummaryFeed(market *environment.Market)   // Subscribes to the Market Summary Feed service.
+	UnsubscribeMarketSummaryFeed(market *environment.Market) // Unsubscribes from the Market Summary Feed service.
 }
+
+// SummaryCache represents a local summary cache for every exchange. To allow dinamic polling from multiple sources (REST + Websocket)
+type SummaryCache map[*environment.Market]*environment.MarketSummary
 
 // MarketNameFor gets the market name as seen by the exchange.
 func MarketNameFor(m *environment.Market, wrapper ExchangeWrapper) string {

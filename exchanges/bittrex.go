@@ -174,7 +174,7 @@ func (wrapper BittrexWrapper) FeedConnect() {
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 //
 //     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+func (wrapper BittrexWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
 	panic("Not supported on bittrex v1 API")
 }
 

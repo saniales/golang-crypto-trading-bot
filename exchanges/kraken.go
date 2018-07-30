@@ -191,7 +191,7 @@ func (wrapper KrakenWrapper) FeedConnect() {
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper KrakenWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+func (wrapper KrakenWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
 	panic("Not Implemented")
 }
 

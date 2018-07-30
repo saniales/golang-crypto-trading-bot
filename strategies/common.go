@@ -59,8 +59,6 @@ func (t *Tactic) Execute(wrappers []exchanges.ExchangeWrapper) {
 
 func init() {
 	available = make(map[string]Strategy)
-
-	AddCustomStrategy(Watch5Min)
 }
 
 // AddCustomStrategy adds a strategy to the available set.

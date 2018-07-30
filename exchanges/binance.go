@@ -27,14 +27,18 @@ import (
 
 // BinanceWrapper represents the wrapper for the Binance exchange.
 type BinanceWrapper struct {
-	api *binance.Client
+	api       *binance.Client
+	summaries SummaryCache
+	apiSwitch bool
 }
 
 // NewBinanceWrapper creates a generic wrapper of the binance API.
-func NewBinanceWrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewBinanceWrapper(publicKey string, secretKey string, apiSwitch bool) ExchangeWrapper {
 	client := binance.NewClient(publicKey, secretKey)
 	return BinanceWrapper{
-		api: client,
+		api:       client,
+		summaries: make(SummaryCache),
+		apiSwitch: apiSwitch,
 	}
 }
 
@@ -139,38 +143,42 @@ func (wrapper BinanceWrapper) GetTicker(market *environment.Market) (*environmen
 
 // GetMarketSummary gets the current market summary.
 func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
-	hilo, err := wrapper.api.NewListPriceChangeStatsService().Do(context.Background())
-	if err != nil {
-		return nil, err
-	}
+	if !wrapper.apiSwitch {
+		hilo, err := wrapper.api.NewListPriceChangeStatsService().Do(context.Background())
+		if err != nil {
+			return nil, err
+		}
 
-	var binanceSummary *binance.PriceChangeStats
+		var binanceSummary *binance.PriceChangeStats
 
-	for _, val := range hilo {
-		if val.Symbol == MarketNameFor(market, wrapper) {
-			binanceSummary = val
-			break
+		for _, val := range hilo {
+			if val.Symbol == MarketNameFor(market, wrapper) {
+				binanceSummary = val
+				break
+			}
+		}
+
+		if binanceSummary == nil {
+			return nil, errors.New("Symbol not found")
+		}
+
+		ask, _ := decimal.NewFromString(binanceSummary.AskPrice)
+		bid, _ := decimal.NewFromString(binanceSummary.BidPrice)
+		high, _ := decimal.NewFromString(binanceSummary.HighPrice)
+		low, _ := decimal.NewFromString(binanceSummary.LowPrice)
+		volume, _ := decimal.NewFromString(binanceSummary.Volume)
+
+		wrapper.summaries[market] = &environment.MarketSummary{
+			Last:   ask,
+			Ask:    ask,
+			Bid:    bid,
+			High:   high,
+			Low:    low,
+			Volume: volume,
 		}
 	}
 
-	if binanceSummary == nil {
-		return nil, errors.New("Symbol not found")
-	}
-
-	ask, _ := decimal.NewFromString(binanceSummary.AskPrice)
-	bid, _ := decimal.NewFromString(binanceSummary.BidPrice)
-	high, _ := decimal.NewFromString(binanceSummary.HighPrice)
-	low, _ := decimal.NewFromString(binanceSummary.LowPrice)
-	volume, _ := decimal.NewFromString(binanceSummary.Volume)
-
-	return &environment.MarketSummary{
-		Last:   ask,
-		Ask:    ask,
-		Bid:    bid,
-		High:   high,
-		Low:    low,
-		Volume: volume,
-	}, nil
+	return wrapper.summaries[market], nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
@@ -203,7 +211,7 @@ var unsubscribe = make(map[string]chan struct{})
 var unsubscribed = make(map[string]chan struct{})
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper BinanceWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+func (wrapper BinanceWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
 	doneC, stopC, err := binance.WsMarketStatServe(MarketNameFor(market, wrapper), func(event *binance.WsMarketStatEvent) {
 		high, _ := decimal.NewFromString(event.HighPrice)
 		low, _ := decimal.NewFromString(event.LowPrice)
@@ -212,14 +220,14 @@ func (wrapper BinanceWrapper) SubscribeMarketSummaryFeed(market *environment.Mar
 		last, _ := decimal.NewFromString(event.LastPrice)
 		volume, _ := decimal.NewFromString(event.BaseVolume)
 
-		onUpdate(environment.MarketSummary{
+		wrapper.summaries[market] = &environment.MarketSummary{
 			High:   high,
 			Low:    low,
 			Ask:    ask,
 			Bid:    bid,
 			Last:   last,
 			Volume: volume,
-		})
+		}
 	}, func(error) {})
 
 	if err != nil {

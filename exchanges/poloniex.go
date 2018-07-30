@@ -30,6 +30,7 @@ import (
 type PoloniexWrapper struct {
 	api           *poloniex.Poloniex // access to Poloniex API
 	bindedTickers map[string]bool    // if true, i am subscribing to market ticker.
+	summaries     SummaryCache
 }
 
 // NewPoloniexWrapper creates a generic wrapper of the poloniex API.
@@ -37,6 +38,7 @@ func NewPoloniexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return PoloniexWrapper{
 		api:           poloniex.NewWithCredentials(publicKey, secretKey),
 		bindedTickers: make(map[string]bool),
+		summaries:     make(SummaryCache),
 	}
 }
 
@@ -171,7 +173,7 @@ func (wrapper PoloniexWrapper) FeedConnect() {
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
 	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
 	if len(wrapper.bindedTickers) == 0 {
 		wrapper.api.Subscribe("ticker")
@@ -190,14 +192,14 @@ func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Ma
 		wrapper.bindedTickers[MarketNameFor(market, wrapper)] = true
 
 		wrapper.api.On(subTicker, func(t poloniex.WSTicker) {
-			onUpdate(environment.MarketSummary{
+			wrapper.summaries[market] = &environment.MarketSummary{
 				High:   decimal.NewFromFloat(t.DailyHigh),
 				Low:    decimal.NewFromFloat(t.DailyLow),
 				Last:   decimal.NewFromFloat(t.Last),
 				Ask:    decimal.NewFromFloat(t.Ask),
 				Bid:    decimal.NewFromFloat(t.Bid),
 				Volume: decimal.NewFromFloat(t.BaseVolume),
-			})
+			}
 		})
 	}
 

@@ -16,6 +16,7 @@
 package strategies
 
 import (
+	"errors"
 	"time"
 
 	"github.com/saniales/golang-crypto-trading-bot/environment"
@@ -41,22 +42,36 @@ func (is IntervalStrategy) String() string {
 // Apply executes Cyclically the On Update, basing on provided interval.
 func (is IntervalStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) {
 	var err error
-	if is.Model.Setup != nil {
+
+	hasSetupFunc := is.Model.Setup != nil
+	hasTearDownFunc := is.Model.TearDown != nil
+	hasUpdateFunc := is.Model.OnUpdate != nil
+	hasErrorFunc := is.Model.OnError != nil
+
+	if hasSetupFunc {
 		err = is.Model.Setup(wrappers, markets)
-		if err != nil && is.Model.OnError != nil {
+		if err != nil && hasErrorFunc {
 			is.Model.OnError(err)
+		}
+	}
+	if !hasUpdateFunc {
+		_err := errors.New("OnUpdate func cannot be empty")
+		if hasErrorFunc {
+			is.Model.OnError(_err)
+		} else {
+			panic(_err)
 		}
 	}
 	for err == nil {
 		err = is.Model.OnUpdate(wrappers, markets)
-		if err != nil && is.Model.OnError != nil {
+		if err != nil && hasErrorFunc {
 			is.Model.OnError(err)
 		}
 		time.Sleep(is.Interval)
 	}
-	if is.Model.TearDown != nil {
+	if hasTearDownFunc {
 		err = is.Model.TearDown(wrappers, markets)
-		if err != nil && is.Model.OnError != nil {
+		if err != nil && hasErrorFunc {
 			is.Model.OnError(err)
 		}
 	}

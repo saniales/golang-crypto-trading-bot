@@ -26,6 +26,7 @@ import (
 type BittrexWrapperV2 struct {
 	PublicKey string
 	SecretKey string
+	summaries SummaryCache
 }
 
 // NewBittrexV2Wrapper creates a generic wrapper of the bittrex API v2.0.
@@ -33,6 +34,7 @@ func NewBittrexV2Wrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return BittrexWrapperV2{
 		PublicKey: publicKey,
 		SecretKey: secretKey,
+		summaries: make(SummaryCache),
 	}
 }
 
@@ -101,14 +103,16 @@ func (wrapper BittrexWrapperV2) GetMarketSummary(market *environment.Market) (*e
 		return nil, err
 	}
 
-	return &environment.MarketSummary{
+	wrapper.summaries[market] = &environment.MarketSummary{
 		High:   summary.High,
 		Low:    summary.Low,
 		Volume: summary.Volume,
 		Bid:    summary.Bid,
 		Ask:    summary.Ask,
 		Last:   summary.Last,
-	}, nil
+	}
+
+	return wrapper.summaries[market], nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
@@ -142,7 +146,7 @@ func (wrapper BittrexWrapperV2) FeedConnect() {
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 //
 //     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapperV2) SubscribeMarketSummaryFeed(market *environment.Market, onUpdate func(environment.MarketSummary)) {
+func (wrapper BittrexWrapperV2) SubscribeMarketSummaryFeed(market *environment.Market) {
 	panic("Not Implemented")
 }
 
