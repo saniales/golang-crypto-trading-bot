@@ -16,8 +16,6 @@
 package exchanges
 
 import (
-	"sync"
-
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 )
 
@@ -34,7 +32,7 @@ const (
 //ExchangeWrapper provides a generic wrapper for exchange services.
 type ExchangeWrapper interface {
 	Name() string                                                                                                // Gets the name of the exchange.
-	GetTicker(market *environment.Market) (*environment.Ticker, error)                                           // Gets the updated ticker for a market.
+	GetCandles(market *environment.Market) ([]environment.CandleStick, error)                                    // Gets the candle data from the exchange.
 	GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error)                             // Gets the current market summary.
 	GetOrderBook(market *environment.Market) (*environment.OrderBook, error)                                     // Gets the order(ASK + BID) book of a market.
 	BuyLimit(market *environment.Market, amount float64, limit float64) (string, error)                          // Performs a limit buy action.
@@ -45,37 +43,6 @@ type ExchangeWrapper interface {
 	FeedConnect()                                            // Connects to the feed of the exchange.
 	SubscribeMarketSummaryFeed(market *environment.Market)   // Subscribes to the Market Summary Feed service.
 	UnsubscribeMarketSummaryFeed(market *environment.Market) // Unsubscribes from the Market Summary Feed service.
-}
-
-// SummaryCache represents a local summary cache for every exchange. To allow dinamic polling from multiple sources (REST + Websocket)
-type SummaryCache struct {
-	mutex    *sync.RWMutex
-	internal map[*environment.Market]*environment.MarketSummary
-}
-
-// NewSummaryCache creates a new SummaryCache Object
-func NewSummaryCache() SummaryCache {
-	return SummaryCache{
-		mutex:    &sync.RWMutex{},
-		internal: make(map[*environment.Market]*environment.MarketSummary),
-	}
-}
-
-// Set sets a value for the specified key.
-func (sc *SummaryCache) Set(market *environment.Market, summary *environment.MarketSummary) *environment.MarketSummary {
-	sc.mutex.Lock()
-	old := sc.internal[market]
-	sc.internal[market] = summary
-	sc.mutex.Unlock()
-	return old
-}
-
-// Get gets the value for the specified key.
-func (sc *SummaryCache) Get(market *environment.Market) (*environment.MarketSummary, bool) {
-	sc.mutex.RLock()
-	ret, isSet := sc.internal[market]
-	sc.mutex.RUnlock()
-	return ret, isSet
 }
 
 // MarketNameFor gets the market name as seen by the exchange.

@@ -156,6 +156,11 @@ func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) (*en
 	return ret, nil
 }
 
+// GetCandles gets the candle data from the exchange.
+func (wrapper BitfinexWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+	panic("Not supported in V1")
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Bitfinex fees are currently hardcoded.

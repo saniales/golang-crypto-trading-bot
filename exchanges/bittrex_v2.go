@@ -91,11 +91,6 @@ func (wrapper BittrexWrapperV2) SellMarket(market *environment.Market, amount fl
 	return "", errors.New("SellMarket not implemented")
 }
 
-// GetTicker gets the updated ticker for a market.
-func (wrapper BittrexWrapperV2) GetTicker(market *environment.Market) (*environment.Ticker, error) {
-	return nil, errors.New("GetTicker not implemented")
-}
-
 // GetMarketSummary gets the current market summary.
 func (wrapper BittrexWrapperV2) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	summary, err := bittrex.GetMarketSummary(market.Name)
@@ -113,6 +108,28 @@ func (wrapper BittrexWrapperV2) GetMarketSummary(market *environment.Market) (*e
 	}
 
 	wrapper.summaries.Set(market, ret)
+
+	return ret, nil
+}
+
+// GetCandles gets the candle data from the exchange.
+func (wrapper BittrexWrapperV2) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+	bittrexCandles, err := bittrex.GetTicks(MarketNameFor(market, wrapper), "30m")
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]environment.CandleStick, len(bittrexCandles))
+
+	for i, bittrexCandle := range bittrexCandles {
+		ret[i] = environment.CandleStick{
+			High:   bittrexCandle.High,
+			Open:   bittrexCandle.Open,
+			Close:  bittrexCandle.Close,
+			Low:    bittrexCandle.Low,
+			Volume: bittrexCandle.BaseVolume,
+		}
+	}
 
 	return ret, nil
 }
