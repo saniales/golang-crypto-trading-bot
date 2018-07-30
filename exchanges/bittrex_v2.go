@@ -34,7 +34,7 @@ func NewBittrexV2Wrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return BittrexWrapperV2{
 		PublicKey: publicKey,
 		SecretKey: secretKey,
-		summaries: make(SummaryCache),
+		summaries: NewSummaryCache(),
 	}
 }
 
@@ -103,7 +103,7 @@ func (wrapper BittrexWrapperV2) GetMarketSummary(market *environment.Market) (*e
 		return nil, err
 	}
 
-	wrapper.summaries[market] = &environment.MarketSummary{
+	ret := &environment.MarketSummary{
 		High:   summary.High,
 		Low:    summary.Low,
 		Volume: summary.Volume,
@@ -112,7 +112,9 @@ func (wrapper BittrexWrapperV2) GetMarketSummary(market *environment.Market) (*e
 		Last:   summary.Last,
 	}
 
-	return wrapper.summaries[market], nil
+	wrapper.summaries.Set(market, ret)
+
+	return ret, nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.

@@ -1,6 +1,7 @@
 package exchanges
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/shopspring/decimal"
@@ -12,6 +13,7 @@ import (
 // BitfinexWrapper provides a Generic wrapper of the Bitfinex API.
 type BitfinexWrapper struct {
 	api                 *bitfinex.Client
+	websocketOn         bool
 	unsubscribeChannels map[string]chan bool
 	summaries           SummaryCache
 }
@@ -21,7 +23,8 @@ func NewBitfinexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return BitfinexWrapper{
 		api:                 bitfinex.NewClient().Auth(publicKey, secretKey),
 		unsubscribeChannels: make(map[string]chan bool),
-		summaries:           make(SummaryCache),
+		summaries:           NewSummaryCache(),
+		websocketOn:         false,
 	}
 }
 
@@ -120,25 +123,37 @@ func (wrapper BitfinexWrapper) GetTicker(market *environment.Market) (*environme
 
 // GetMarketSummary gets the current market summary.
 func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
-	bitfinexSummary, err := wrapper.api.Ticker.Get(MarketNameFor(market, wrapper))
-	if err != nil {
-		return nil, err
+	ret, summaryLoaded := wrapper.summaries.Get(market)
+	if !wrapper.websocketOn {
+		bitfinexSummary, err := wrapper.api.Ticker.Get(MarketNameFor(market, wrapper))
+		if err != nil {
+			return nil, err
+		}
+
+		high, _ := decimal.NewFromString(bitfinexSummary.High)
+		low, _ := decimal.NewFromString(bitfinexSummary.Low)
+		volume, _ := decimal.NewFromString(bitfinexSummary.Volume)
+		bid, _ := decimal.NewFromString(bitfinexSummary.Bid)
+		ask, _ := decimal.NewFromString(bitfinexSummary.Ask)
+
+		if !summaryLoaded {
+			return nil, errors.New("Summary not loaded")
+		}
+
+		ret = &environment.MarketSummary{
+			High:   high,
+			Low:    low,
+			Volume: volume,
+			Bid:    bid,
+			Ask:    ask,
+			Last:   ask, // TODO: find a better way for last value, if any
+		}
+
+		wrapper.summaries.Set(market, ret)
+		return ret, nil
 	}
 
-	high, _ := decimal.NewFromString(bitfinexSummary.High)
-	low, _ := decimal.NewFromString(bitfinexSummary.Low)
-	volume, _ := decimal.NewFromString(bitfinexSummary.Volume)
-	bid, _ := decimal.NewFromString(bitfinexSummary.Bid)
-	ask, _ := decimal.NewFromString(bitfinexSummary.Ask)
-
-	return &environment.MarketSummary{
-		High:   high,
-		Low:    low,
-		Volume: volume,
-		Bid:    bid,
-		Ask:    ask,
-		Last:   ask, // TODO: find a better way for last value, if any
-	}, nil
+	return ret, nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
@@ -168,6 +183,8 @@ func (wrapper BitfinexWrapper) FeedConnect() {
 	if err != nil {
 		panic(err)
 	}
+
+	wrapper.websocketOn = true
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
@@ -195,13 +212,13 @@ func (wrapper BitfinexWrapper) SubscribeMarketSummaryFeed(market *environment.Ma
 		for {
 			select {
 			case values := <-results:
-				wrapper.summaries[market] = &environment.MarketSummary{
+				wrapper.summaries.Set(market, &environment.MarketSummary{
 					Bid:    decimal.NewFromFloat(values[0]),
 					Ask:    decimal.NewFromFloat(values[2]),
 					Volume: decimal.NewFromFloat(values[7]),
 					High:   decimal.NewFromFloat(values[8]),
 					Low:    decimal.NewFromFloat(values[9]),
-				}
+				})
 			case <-wrapper.unsubscribeChannels[tickerKey]:
 				close(wrapper.unsubscribeChannels[tickerKey])
 				delete(wrapper.unsubscribeChannels, tickerKey)

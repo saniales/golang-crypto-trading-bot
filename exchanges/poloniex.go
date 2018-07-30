@@ -31,6 +31,7 @@ type PoloniexWrapper struct {
 	api           *poloniex.Poloniex // access to Poloniex API
 	bindedTickers map[string]bool    // if true, i am subscribing to market ticker.
 	summaries     SummaryCache
+	websocketOn   bool
 }
 
 // NewPoloniexWrapper creates a generic wrapper of the poloniex API.
@@ -38,7 +39,8 @@ func NewPoloniexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return PoloniexWrapper{
 		api:           poloniex.NewWithCredentials(publicKey, secretKey),
 		bindedTickers: make(map[string]bool),
-		summaries:     make(SummaryCache),
+		summaries:     NewSummaryCache(),
+		websocketOn:   false,
 	}
 }
 
@@ -170,48 +172,52 @@ func (wrapper PoloniexWrapper) CalculateWithdrawFees(market *environment.Market,
 // FeedConnect connects to the feed of the poloniex websocket.
 func (wrapper PoloniexWrapper) FeedConnect() {
 	wrapper.api.StartWS()
+	wrapper.websocketOn = true
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
-	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
-	if len(wrapper.bindedTickers) == 0 {
-		wrapper.api.Subscribe("ticker")
+	if wrapper.websocketOn {
+		subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
+		if len(wrapper.bindedTickers) == 0 {
+			wrapper.api.Subscribe("ticker")
 
-		wrapper.api.On("ticker", func(t poloniex.WSTicker) {
-			for bindedTicker := range wrapper.bindedTickers {
+			wrapper.api.On("ticker", func(t poloniex.WSTicker) {
+				for bindedTicker := range wrapper.bindedTickers {
 
-				if bindedTicker == t.Pair {
-					wrapper.api.Emit(subTicker, t)
+					if bindedTicker == t.Pair {
+						wrapper.api.Emit(subTicker, t)
+					}
 				}
-			}
-		})
+			})
+		}
+
+		if _, exists := wrapper.bindedTickers[MarketNameFor(market, wrapper)]; !exists {
+			wrapper.bindedTickers[MarketNameFor(market, wrapper)] = true
+
+			wrapper.api.On(subTicker, func(t poloniex.WSTicker) {
+				wrapper.summaries.Set(market, &environment.MarketSummary{
+					High:   decimal.NewFromFloat(t.DailyHigh),
+					Low:    decimal.NewFromFloat(t.DailyLow),
+					Last:   decimal.NewFromFloat(t.Last),
+					Ask:    decimal.NewFromFloat(t.Ask),
+					Bid:    decimal.NewFromFloat(t.Bid),
+					Volume: decimal.NewFromFloat(t.BaseVolume),
+				})
+			})
+		}
 	}
-
-	if _, exists := wrapper.bindedTickers[MarketNameFor(market, wrapper)]; !exists {
-		wrapper.bindedTickers[MarketNameFor(market, wrapper)] = true
-
-		wrapper.api.On(subTicker, func(t poloniex.WSTicker) {
-			wrapper.summaries[market] = &environment.MarketSummary{
-				High:   decimal.NewFromFloat(t.DailyHigh),
-				Low:    decimal.NewFromFloat(t.DailyLow),
-				Last:   decimal.NewFromFloat(t.Last),
-				Ask:    decimal.NewFromFloat(t.Ask),
-				Bid:    decimal.NewFromFloat(t.Bid),
-				Volume: decimal.NewFromFloat(t.BaseVolume),
-			}
-		})
-	}
-
 }
 
 // UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
 func (wrapper PoloniexWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
-	subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
-	wrapper.api.Off(subTicker, func() {})
-	delete(wrapper.bindedTickers, MarketNameFor(market, wrapper))
+	if wrapper.websocketOn {
+		subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
+		wrapper.api.Off(subTicker, func() {})
+		delete(wrapper.bindedTickers, MarketNameFor(market, wrapper))
 
-	if len(wrapper.bindedTickers) == 0 {
-		wrapper.api.Unsubscribe("ticker")
+		if len(wrapper.bindedTickers) == 0 {
+			wrapper.api.Unsubscribe("ticker")
+		}
 	}
 }

@@ -16,6 +16,8 @@
 package exchanges
 
 import (
+	"sync"
+
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 )
 
@@ -46,7 +48,35 @@ type ExchangeWrapper interface {
 }
 
 // SummaryCache represents a local summary cache for every exchange. To allow dinamic polling from multiple sources (REST + Websocket)
-type SummaryCache map[*environment.Market]*environment.MarketSummary
+type SummaryCache struct {
+	mutex    *sync.RWMutex
+	internal map[*environment.Market]*environment.MarketSummary
+}
+
+// NewSummaryCache creates a new SummaryCache Object
+func NewSummaryCache() SummaryCache {
+	return SummaryCache{
+		mutex:    &sync.RWMutex{},
+		internal: make(map[*environment.Market]*environment.MarketSummary),
+	}
+}
+
+// Set sets a value for the specified key.
+func (sc *SummaryCache) Set(market *environment.Market, summary *environment.MarketSummary) *environment.MarketSummary {
+	sc.mutex.Lock()
+	old := sc.internal[market]
+	sc.internal[market] = summary
+	sc.mutex.Unlock()
+	return old
+}
+
+// Get gets the value for the specified key.
+func (sc *SummaryCache) Get(market *environment.Market) (*environment.MarketSummary, bool) {
+	sc.mutex.RLock()
+	ret, isSet := sc.internal[market]
+	sc.mutex.RUnlock()
+	return ret, isSet
+}
 
 // MarketNameFor gets the market name as seen by the exchange.
 func MarketNameFor(m *environment.Market, wrapper ExchangeWrapper) string {

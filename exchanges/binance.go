@@ -27,18 +27,18 @@ import (
 
 // BinanceWrapper represents the wrapper for the Binance exchange.
 type BinanceWrapper struct {
-	api       *binance.Client
-	summaries SummaryCache
-	apiSwitch bool
+	api         *binance.Client
+	summaries   SummaryCache
+	websocketOn bool
 }
 
 // NewBinanceWrapper creates a generic wrapper of the binance API.
-func NewBinanceWrapper(publicKey string, secretKey string, apiSwitch bool) ExchangeWrapper {
+func NewBinanceWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	client := binance.NewClient(publicKey, secretKey)
 	return BinanceWrapper{
-		api:       client,
-		summaries: make(SummaryCache),
-		apiSwitch: apiSwitch,
+		api:         client,
+		summaries:   NewSummaryCache(),
+		websocketOn: false,
 	}
 }
 
@@ -143,7 +143,7 @@ func (wrapper BinanceWrapper) GetTicker(market *environment.Market) (*environmen
 
 // GetMarketSummary gets the current market summary.
 func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
-	if !wrapper.apiSwitch {
+	if !wrapper.websocketOn {
 		hilo, err := wrapper.api.NewListPriceChangeStatsService().Do(context.Background())
 		if err != nil {
 			return nil, err
@@ -168,17 +168,22 @@ func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) (*env
 		low, _ := decimal.NewFromString(binanceSummary.LowPrice)
 		volume, _ := decimal.NewFromString(binanceSummary.Volume)
 
-		wrapper.summaries[market] = &environment.MarketSummary{
+		wrapper.summaries.Set(market, &environment.MarketSummary{
 			Last:   ask,
 			Ask:    ask,
 			Bid:    bid,
 			High:   high,
 			Low:    low,
 			Volume: volume,
-		}
+		})
 	}
 
-	return wrapper.summaries[market], nil
+	ret, summaryLoaded := wrapper.summaries.Get(market)
+	if !summaryLoaded {
+		return nil, errors.New("Summary not loaded")
+	}
+
+	return ret, nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
@@ -204,7 +209,7 @@ func (wrapper BinanceWrapper) CalculateWithdrawFees(market *environment.Market, 
 
 // FeedConnect connects to the feed of the exchange.
 func (wrapper BinanceWrapper) FeedConnect() {
-	//empty
+	wrapper.websocketOn = true
 }
 
 var unsubscribe = make(map[string]chan struct{})
@@ -212,42 +217,46 @@ var unsubscribed = make(map[string]chan struct{})
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 func (wrapper BinanceWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
-	doneC, stopC, err := binance.WsMarketStatServe(MarketNameFor(market, wrapper), func(event *binance.WsMarketStatEvent) {
-		high, _ := decimal.NewFromString(event.HighPrice)
-		low, _ := decimal.NewFromString(event.LowPrice)
-		ask, _ := decimal.NewFromString(event.AskPrice)
-		bid, _ := decimal.NewFromString(event.BidPrice)
-		last, _ := decimal.NewFromString(event.LastPrice)
-		volume, _ := decimal.NewFromString(event.BaseVolume)
+	if wrapper.websocketOn {
+		doneC, stopC, err := binance.WsMarketStatServe(MarketNameFor(market, wrapper), func(event *binance.WsMarketStatEvent) {
+			high, _ := decimal.NewFromString(event.HighPrice)
+			low, _ := decimal.NewFromString(event.LowPrice)
+			ask, _ := decimal.NewFromString(event.AskPrice)
+			bid, _ := decimal.NewFromString(event.BidPrice)
+			last, _ := decimal.NewFromString(event.LastPrice)
+			volume, _ := decimal.NewFromString(event.BaseVolume)
 
-		wrapper.summaries[market] = &environment.MarketSummary{
-			High:   high,
-			Low:    low,
-			Ask:    ask,
-			Bid:    bid,
-			Last:   last,
-			Volume: volume,
+			wrapper.summaries.Set(market, &environment.MarketSummary{
+				High:   high,
+				Low:    low,
+				Ask:    ask,
+				Bid:    bid,
+				Last:   last,
+				Volume: volume,
+			})
+		}, func(error) {})
+
+		if err != nil {
+			panic(err)
 		}
-	}, func(error) {})
 
-	if err != nil {
-		panic(err)
+		unsubscribe[MarketNameFor(market, wrapper)] = stopC
+		unsubscribed[MarketNameFor(market, wrapper)] = doneC
 	}
-
-	unsubscribe[MarketNameFor(market, wrapper)] = stopC
-	unsubscribed[MarketNameFor(market, wrapper)] = doneC
 }
 
 // UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
 func (wrapper BinanceWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
-	tickerKey := MarketNameFor(market, wrapper)
+	if wrapper.websocketOn {
+		tickerKey := MarketNameFor(market, wrapper)
 
-	unsubscribe[tickerKey] <- struct{}{}
+		unsubscribe[tickerKey] <- struct{}{}
 
-	<-unsubscribed[tickerKey]
+		<-unsubscribed[tickerKey]
 
-	close(unsubscribe[tickerKey])
-	close(unsubscribed[tickerKey])
-	delete(unsubscribe, tickerKey)
-	delete(unsubscribed, tickerKey)
+		close(unsubscribe[tickerKey])
+		close(unsubscribed[tickerKey])
+		delete(unsubscribe, tickerKey)
+		delete(unsubscribed, tickerKey)
+	}
 }
