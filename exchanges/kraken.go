@@ -17,6 +17,7 @@ package exchanges
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/beldur/kraken-go-api-client"
 	"github.com/fatih/structs"
@@ -162,6 +163,36 @@ func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) (*envi
 		Ask:    ask,
 		Last:   ask, // TODO: find a better way for last value, if any
 	}, nil
+}
+
+// GetCandles gets the candle data from the exchange.
+func (wrapper KrakenWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+	krakenTrades, err := wrapper.api.Trades(MarketNameFor(market, wrapper), time.Now().Add(-time.Hour*24).Unix())
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]environment.CandleStick, 50)
+
+	step := time.Minute * 30
+	start := time.Unix(krakenTrades.Trades[0].Time, 0)
+
+	high := 0
+	low := 0
+	open := krakenTrades.Trades[0].PriceFloat
+	close := 0
+
+	for i, krakenTrade := range krakenTrades.Trades {
+		candleTime := time.Unix(krakenTrade.Time, 0)
+		if candleTime.Before(start.Add(step)) {
+			// aggregate data from candle
+		} else {
+			previousTrade := krakenTrades.Trades[i-1]
+			// change start and setup candle open and close
+		}
+	}
+
+	return ret, nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.

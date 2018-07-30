@@ -143,6 +143,11 @@ func convertFromBittrexCandle(candle bittrexAPI.Candle) environment.CandleStick 
 	}
 }
 
+// GetCandles gets the candle data from the exchange.
+func (wrapper BittrexWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+	panic("Not supported in Bittrex V1")
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Bittrex fees are hardcoded due to the inability to obtain them via API before placing an order.

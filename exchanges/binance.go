@@ -186,6 +186,34 @@ func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) (*env
 	return ret, nil
 }
 
+// GetCandles gets the candle data from the exchange.
+func (wrapper BinanceWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+	binanceCandles, err := wrapper.api.NewKlinesService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]environment.CandleStick, len(binanceCandles))
+
+	for i, binanceCandle := range binanceCandles {
+		high, _ := decimal.NewFromString(binanceCandle.High)
+		open, _ := decimal.NewFromString(binanceCandle.Open)
+		close, _ := decimal.NewFromString(binanceCandle.Close)
+		low, _ := decimal.NewFromString(binanceCandle.Low)
+		volume, _ := decimal.NewFromString(binanceCandle.Volume)
+
+		ret[i] = environment.CandleStick{
+			High:   high,
+			Open:   open,
+			Close:  close,
+			Low:    low,
+			Volume: volume,
+		}
+	}
+
+	return ret, nil
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Binance fees are currently hardcoded.
