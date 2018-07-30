@@ -31,6 +31,7 @@ type PoloniexWrapper struct {
 	api           *poloniex.Poloniex // access to Poloniex API
 	bindedTickers map[string]bool    // if true, i am subscribing to market ticker.
 	summaries     SummaryCache
+	candles       SummaryCache
 	websocketOn   bool
 }
 
@@ -71,6 +72,28 @@ func (wrapper PoloniexWrapper) GetMarkets() ([]*environment.Market, error) {
 		}
 	}
 	return wrappedMarkets, nil
+}
+
+// GetCandles gets the candle data from the exchange.
+func (wrapper PoloniexWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+	poloniesCandles, err := wrapper.api.ChartData(MarketNameFor(market, wrapper))
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]environment.CandleStick, len(poloniesCandles))
+
+	for i, poloniexCandle := range poloniesCandles {
+		ret[i] = environment.CandleStick{
+			High:   decimal.NewFromFloat(poloniexCandle.High),
+			Open:   decimal.NewFromFloat(poloniexCandle.Open),
+			Close:  decimal.NewFromFloat(poloniexCandle.Close),
+			Low:    decimal.NewFromFloat(poloniexCandle.Low),
+			Volume: decimal.NewFromFloat(poloniexCandle.Volume),
+		}
+	}
+
+	return ret, nil
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
