@@ -16,6 +16,7 @@
 package exchanges
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -29,13 +30,19 @@ import (
 
 // KrakenWrapper provides a Generic wrapper of the Kraken API.
 type KrakenWrapper struct {
-	api *krakenapi.KrakenApi
+	api         *krakenapi.KrakenApi
+	summaries   SummaryCache
+	candles     CandlesCache
+	websocketOn bool
 }
 
 // NewKrakenWrapper creates a generic wrapper of the poloniex API.
 func NewKrakenWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return KrakenWrapper{
-		api: krakenapi.New(publicKey, secretKey),
+		api:         krakenapi.New(publicKey, secretKey),
+		summaries:   NewSummaryCache(),
+		candles:     NewCandlesCache(),
+		websocketOn: false,
 	}
 }
 
@@ -167,60 +174,69 @@ func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) (*envi
 
 // GetCandles gets the candle data from the exchange.
 func (wrapper KrakenWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
-	now := time.Now()
+	if !wrapper.websocketOn {
+		now := time.Now()
 
-	krakenTrades, err := wrapper.api.Trades(MarketNameFor(market, wrapper), now.Add(-time.Hour*24).Unix())
-	if err != nil {
-		return nil, err
-	}
-
-	trades := krakenTrades.Trades
-
-	for lastTradeTime := time.Unix(krakenTrades.Last, 0); lastTradeTime.Before(now); {
-		krakenTrades, err = wrapper.api.Trades(MarketNameFor(market, wrapper), now.Add(-time.Hour*24).Unix())
+		krakenTrades, err := wrapper.api.Trades(MarketNameFor(market, wrapper), now.Add(-time.Hour*24).Unix())
 		if err != nil {
 			return nil, err
 		}
 
-		trades = append(trades, krakenTrades.Trades...)
+		trades := krakenTrades.Trades
+
+		for lastTradeTime := time.Unix(krakenTrades.Last, 0); lastTradeTime.Before(now); {
+			krakenTrades, err = wrapper.api.Trades(MarketNameFor(market, wrapper), now.Add(-time.Hour*24).Unix())
+			if err != nil {
+				return nil, err
+			}
+
+			trades = append(trades, krakenTrades.Trades...)
+		}
+
+		ret := make([]environment.CandleStick, 0, 50)
+
+		step := time.Minute * 30
+		start := time.Unix(krakenTrades.Trades[0].Time, 0)
+
+		open := decimal.NewFromFloat(krakenTrades.Trades[0].PriceFloat)
+		high := open
+		low := open
+		close := open
+
+		N := len(trades)
+
+		for i := 1; i < N; i++ {
+			currentTrade := trades[i]
+			candleTime := time.Unix(currentTrade.Time, 0)
+			isLastTrade := i == N-1
+
+			if candleTime.Before(start.Add(step)) || isLastTrade {
+				// aggregate candles from trades.
+				currentPrice := decimal.NewFromFloat(currentTrade.PriceFloat)
+				high = decimal.Max(high, currentPrice)
+				low = decimal.Min(low, currentPrice)
+			} else {
+				// add candle with aggregate data and reset.
+				previousTrade := trades[i-1]
+				close = decimal.NewFromFloat(previousTrade.PriceFloat)
+				ret = append(ret, environment.CandleStick{
+					High:  high,
+					Open:  open,
+					Close: close,
+					Low:   low,
+				})
+				open = decimal.NewFromFloat(currentTrade.PriceFloat)
+				high = decimal.NewFromFloat(0)
+				low = decimal.NewFromFloat(999999999)
+			}
+		}
+
+		wrapper.candles.Set(market, ret)
 	}
 
-	ret := make([]environment.CandleStick, 0, 50)
-
-	step := time.Minute * 30
-	start := time.Unix(krakenTrades.Trades[0].Time, 0)
-
-	open := decimal.NewFromFloat(krakenTrades.Trades[0].PriceFloat)
-	high := open
-	low := open
-	close := open
-
-	N := len(trades)
-
-	for i := 1; i < N; i++ {
-		currentTrade := trades[i]
-		candleTime := time.Unix(currentTrade.Time, 0)
-		isLastTrade := i == N-1
-
-		if candleTime.Before(start.Add(step)) || isLastTrade {
-			// aggregate candles from trades.
-			currentPrice := decimal.NewFromFloat(currentTrade.PriceFloat)
-			high = decimal.Max(high, currentPrice)
-			low = decimal.Min(low, currentPrice)
-		} else {
-			// add candle with aggregate data and reset.
-			previousTrade := trades[i-1]
-			close = decimal.NewFromFloat(previousTrade.PriceFloat)
-			ret = append(ret, environment.CandleStick{
-				High:  high,
-				Open:  open,
-				Close: close,
-				Low:   low,
-			})
-			open = decimal.NewFromFloat(currentTrade.PriceFloat)
-			high = decimal.NewFromFloat(0)
-			low = decimal.NewFromFloat(999999999)
-		}
+	ret, candleLoaded := wrapper.candles.Get(market)
+	if !candleLoaded {
+		return nil, errors.New("No candle data yet")
 	}
 
 	return ret, nil
