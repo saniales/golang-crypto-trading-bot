@@ -29,6 +29,7 @@ import (
 type BinanceWrapper struct {
 	api         *binance.Client
 	summaries   SummaryCache
+	candles     CandlesCache
 	websocketOn bool
 }
 
@@ -38,6 +39,7 @@ func NewBinanceWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return BinanceWrapper{
 		api:         client,
 		summaries:   NewSummaryCache(),
+		candles:     NewCandlesCache(),
 		websocketOn: false,
 	}
 }
@@ -188,27 +190,36 @@ func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) (*env
 
 // GetCandles gets the candle data from the exchange.
 func (wrapper BinanceWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
-	binanceCandles, err := wrapper.api.NewKlinesService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
-	if err != nil {
-		return nil, err
+	if !wrapper.websocketOn {
+		binanceCandles, err := wrapper.api.NewKlinesService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
+		if err != nil {
+			return nil, err
+		}
+
+		ret := make([]environment.CandleStick, len(binanceCandles))
+
+		for i, binanceCandle := range binanceCandles {
+			high, _ := decimal.NewFromString(binanceCandle.High)
+			open, _ := decimal.NewFromString(binanceCandle.Open)
+			close, _ := decimal.NewFromString(binanceCandle.Close)
+			low, _ := decimal.NewFromString(binanceCandle.Low)
+			volume, _ := decimal.NewFromString(binanceCandle.Volume)
+
+			ret[i] = environment.CandleStick{
+				High:   high,
+				Open:   open,
+				Close:  close,
+				Low:    low,
+				Volume: volume,
+			}
+		}
+
+		wrapper.candles.Set(market, ret)
 	}
 
-	ret := make([]environment.CandleStick, len(binanceCandles))
-
-	for i, binanceCandle := range binanceCandles {
-		high, _ := decimal.NewFromString(binanceCandle.High)
-		open, _ := decimal.NewFromString(binanceCandle.Open)
-		close, _ := decimal.NewFromString(binanceCandle.Close)
-		low, _ := decimal.NewFromString(binanceCandle.Low)
-		volume, _ := decimal.NewFromString(binanceCandle.Volume)
-
-		ret[i] = environment.CandleStick{
-			High:   high,
-			Open:   open,
-			Close:  close,
-			Low:    low,
-			Volume: volume,
-		}
+	ret, candleLoaded := wrapper.candles.Get(market)
+	if !candleLoaded {
+		return nil, errors.New("No candle data yet")
 	}
 
 	return ret, nil
