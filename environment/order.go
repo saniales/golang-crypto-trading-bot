@@ -15,7 +15,11 @@
 
 package environment
 
-import "github.com/shopspring/decimal"
+import (
+	"time"
+
+	"github.com/shopspring/decimal"
+)
 
 //OrderType is an enum {ASK, BID}
 type OrderType int16
@@ -37,7 +41,8 @@ type OrderBook struct {
 type Order struct {
 	Value       decimal.Decimal //Value of the trade : e.g. in a BTC ETH is the value of a single ETH in BTC.
 	Quantity    decimal.Decimal //Quantity of Coins of this order.
-	OrderNumber string          //[optional]Order number as seen in echange archives.
+	OrderNumber string          //[optional] Order number as seen in echange archives.
+	Timestamp   time.Time       //[optional] The timestamp of the order (as got from the exchange).
 }
 
 //Total returns order total in base currency.
