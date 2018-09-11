@@ -149,6 +149,11 @@ func (wrapper BittrexWrapper) GetCandles(market *environment.Market) ([]environm
 	panic("Not supported in Bittrex V1")
 }
 
+// GetBalance gets the balance of the user of the specified currency.
+func (wrapper BittrexWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
+	panic("Not Implemented")
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Bittrex fees are hardcoded due to the inability to obtain them via API before placing an order.

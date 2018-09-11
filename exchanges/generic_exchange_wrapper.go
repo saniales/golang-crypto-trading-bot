@@ -17,6 +17,7 @@ package exchanges
 
 import (
 	"github.com/saniales/golang-crypto-trading-bot/environment"
+	"github.com/shopspring/decimal"
 )
 
 // TradeType represents a type of order, from trading fees point of view.
@@ -39,6 +40,8 @@ type ExchangeWrapper interface {
 	SellLimit(market *environment.Market, amount float64, limit float64) (string, error)                         // Performs a limit sell action.
 	CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 // Calculates the trading fees for an order on a specified market.
 	CalculateWithdrawFees(market *environment.Market, amount float64) float64                                    // Calculates the withdrawal fees on a specified market.
+
+	GetBalance(symbol string) (*decimal.Decimal, error) // Gets the balance of the user of the specified currency.
 
 	FeedConnect()                                            // Connects to the feed of the exchange.
 	SubscribeMarketSummaryFeed(market *environment.Market)   // Subscribes to the Market Summary Feed service.
