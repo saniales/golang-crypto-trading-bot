@@ -19,7 +19,7 @@ import (
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
 
-	bittrexAPI "github.com/toorop/go-bittrex"
+	api "github.com/toorop/go-bittrex"
 )
 
 //package github.com/toorop/go-bittrex
@@ -27,13 +27,14 @@ import (
 
 // BittrexWrapper provides a Generic wrapper of the Bittrex API.
 type BittrexWrapper struct {
-	bittrexAPI *bittrexAPI.Bittrex //Represents the helper of the Bittrex API.
+	api                 *api.Bittrex //Represents the helper of the Bittrex API.
+	unsubscribeChannels map[*environment.Market]chan bool
 }
 
 // NewBittrexWrapper creates a generic wrapper of the bittrex API.
 func NewBittrexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return BittrexWrapper{
-		bittrexAPI: bittrexAPI.New(publicKey, secretKey),
+		api: api.New(publicKey, secretKey),
 	}
 }
 
@@ -48,7 +49,7 @@ func (wrapper BittrexWrapper) String() string {
 
 // GetMarkets gets all the markets info.
 func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
-	bittrexMarkets, err := wrapper.bittrexAPI.GetMarkets()
+	bittrexMarkets, err := wrapper.api.GetMarkets()
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +68,7 @@ func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
-	bittrexOrderBook, err := wrapper.bittrexAPI.GetOrderBook(MarketNameFor(market, wrapper), "both")
+	bittrexOrderBook, err := wrapper.api.GetOrderBook(MarketNameFor(market, wrapper), "both")
 	if err != nil {
 		return nil, err
 	}
@@ -91,19 +92,19 @@ func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) (*environ
 
 // BuyLimit performs a limit buy action.
 func (wrapper BittrexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.bittrexAPI.BuyLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
+	orderNumber, err := wrapper.api.BuyLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
 
 // SellLimit performs a limit sell action.
 func (wrapper BittrexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.bittrexAPI.SellLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
+	orderNumber, err := wrapper.api.SellLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
 
 // GetTicker gets the updated ticker for a market.
 func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
-	bittrexTicker, err := wrapper.bittrexAPI.GetTicker(MarketNameFor(market, wrapper))
+	bittrexTicker, err := wrapper.api.GetTicker(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,7 @@ func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environmen
 
 // GetMarketSummary gets the current market summary.
 func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
-	summaryArray, err := wrapper.bittrexAPI.GetMarketSummary(MarketNameFor(market, wrapper))
+	summaryArray, err := wrapper.api.GetMarketSummary(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) (*env
 }
 
 //convertFromBittrexCandle converts a bittrex candle to a environment.CandleStick.
-func convertFromBittrexCandle(candle bittrexAPI.Candle) environment.CandleStick {
+func convertFromBittrexCandle(candle api.Candle) environment.CandleStick {
 	return environment.CandleStick{
 		High:  candle.High,
 		Open:  candle.Open,
@@ -170,17 +171,17 @@ func (wrapper BittrexWrapper) CalculateWithdrawFees(market *environment.Market, 
 }
 
 // FeedConnect connects to the feed of the exchange.
-//
-//     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
 func (wrapper BittrexWrapper) FeedConnect() {
-	panic("Not supported on bittrex v1 API")
+
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 //
 //     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
 func (wrapper BittrexWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
-	panic("Not supported on bittrex v1 API")
+	results := make(chan api.ExchangeState)
+
+	wrapper.api.SubscribeExchangeUpdate(MarketNameFor(market, wrapper), results, wrapper.unsubscribeChannels[market])
 }
 
 // UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.

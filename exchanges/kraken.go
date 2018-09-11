@@ -91,16 +91,18 @@ func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) (*environm
 		amount := decimal.NewFromFloat(order.Amount)
 		rate := decimal.NewFromFloat(order.Price)
 		orderBook.Bids = append(orderBook.Bids, environment.Order{
-			Quantity: amount,
-			Value:    rate,
+			Quantity:  amount,
+			Value:     rate,
+			Timestamp: time.Unix(order.Ts, 0),
 		})
 	}
 	for _, order := range krakenOrderBook.Asks {
 		amount := decimal.NewFromFloat(order.Amount)
 		rate := decimal.NewFromFloat(order.Price)
 		orderBook.Asks = append(orderBook.Asks, environment.Order{
-			Quantity: amount,
-			Value:    rate,
+			Quantity:  amount,
+			Value:     rate,
+			Timestamp: time.Unix(order.Ts, 0),
 		})
 	}
 

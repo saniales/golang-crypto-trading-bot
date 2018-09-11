@@ -3,6 +3,7 @@ package exchanges
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/shopspring/decimal"
 
@@ -68,17 +69,31 @@ func (wrapper BitfinexWrapper) GetOrderBook(market *environment.Market) (*enviro
 	for _, order := range bitfinexOrderBook.Bids {
 		amount, _ := decimal.NewFromString(order.Amount)
 		rate, _ := decimal.NewFromString(order.Rate)
+
+		ts, err := order.ParseTime()
+		if err != nil {
+			ts = new(time.Time)
+		}
+
 		orderBook.Asks = append(orderBook.Asks, environment.Order{
-			Quantity: amount,
-			Value:    rate,
+			Quantity:  amount,
+			Value:     rate,
+			Timestamp: *ts,
 		})
 	}
 	for _, order := range bitfinexOrderBook.Asks {
 		amount, _ := decimal.NewFromString(order.Amount)
 		rate, _ := decimal.NewFromString(order.Rate)
+
+		ts, err := order.ParseTime()
+		if err != nil {
+			ts = new(time.Time)
+		}
+
 		orderBook.Bids = append(orderBook.Bids, environment.Order{
-			Quantity: amount,
-			Value:    rate,
+			Quantity:  amount,
+			Value:     rate,
+			Timestamp: *ts,
 		})
 	}
 

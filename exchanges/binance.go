@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/adshao/go-binance"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
@@ -100,13 +101,15 @@ func (wrapper BinanceWrapper) GetOrderBook(market *environment.Market) (*environ
 
 		if order.Type == "ASK" {
 			orderBook.Asks = append(orderBook.Asks, environment.Order{
-				Quantity: qty,
-				Value:    value,
+				Quantity:  qty,
+				Value:     value,
+				Timestamp: time.Unix(order.Time, 0),
 			})
 		} else if order.Type == "BID" {
 			orderBook.Bids = append(orderBook.Bids, environment.Order{
-				Quantity: qty,
-				Value:    value,
+				Quantity:  qty,
+				Value:     value,
+				Timestamp: time.Unix(order.Time, 0),
 			})
 		}
 	}
