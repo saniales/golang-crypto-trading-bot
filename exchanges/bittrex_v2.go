@@ -19,6 +19,7 @@ import (
 	"errors"
 
 	"github.com/saniales/golang-crypto-trading-bot/environment"
+	"github.com/shopspring/decimal"
 	"github.com/thebotguys/golang-bittrex-api/bittrex"
 )
 
@@ -132,6 +133,11 @@ func (wrapper BittrexWrapperV2) GetCandles(market *environment.Market) ([]enviro
 	}
 
 	return ret, nil
+}
+
+// GetBalance gets the balance of the user of the specified currency.
+func (wrapper BittrexWrapperV2) GetBalance(symbol string) (*decimal.Decimal, error) {
+	panic("Not Implemented")
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.

@@ -179,6 +179,23 @@ func (wrapper PoloniexWrapper) GetMarketSummary(market *environment.Market) (*en
 	}, nil
 }
 
+// GetBalance gets the balance of the user of the specified currency.
+func (wrapper PoloniexWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
+	poloniexBalances, err := wrapper.api.Balances()
+	if err != nil {
+		return nil, err
+	}
+
+	for asset, poloniexBalance := range poloniexBalances {
+		if asset == symbol {
+			ret := decimal.NewFromFloat(poloniexBalance.Available)
+			return &ret, nil
+		}
+	}
+
+	return nil, errors.New("Symbol not found")
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Binance fees are currently hardcoded.

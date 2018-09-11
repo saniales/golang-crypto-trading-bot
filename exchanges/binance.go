@@ -228,6 +228,26 @@ func (wrapper BinanceWrapper) GetCandles(market *environment.Market) ([]environm
 	return ret, nil
 }
 
+// GetBalance gets the balance of the user of the specified currency.
+func (wrapper BinanceWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
+	binanceAccount, err := wrapper.api.NewGetAccountService().Do(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	for _, binanceBalance := range binanceAccount.Balances {
+		if binanceBalance.Asset == symbol {
+			ret, err := decimal.NewFromString(binanceBalance.Free)
+			if err != nil {
+				return nil, err
+			}
+			return &ret, nil
+		}
+	}
+
+	return nil, errors.New("Symbol not found")
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Binance fees are currently hardcoded.
