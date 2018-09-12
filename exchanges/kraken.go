@@ -246,12 +246,12 @@ func (wrapper KrakenWrapper) GetCandles(market *environment.Market) ([]environme
 
 // GetBalance gets the balance of the user of the specified currency.
 func (wrapper KrakenWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
-	krakenBalances, err := wrapper.api.Balance()
+	_, err := wrapper.api.Balance()
 	if err != nil {
 		return nil, err
 	}
 
-	panic("FINISH")
+	panic("Help me integrate this feature!")
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
