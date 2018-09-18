@@ -171,22 +171,31 @@ func (wrapper PoloniexWrapper) GetTicker(market *environment.Market) (*environme
 
 // GetMarketSummary gets the current market summary.
 func (wrapper PoloniexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
-	poloniexSummaries, err := wrapper.api.Ticker()
-	if err != nil {
-		return nil, err
+	if !wrapper.websocketOn {
+		poloniexSummaries, err := wrapper.api.Ticker()
+		if err != nil {
+			return nil, err
+		}
+
+		for pair, poloniexSummary := range poloniexSummaries {
+			if pair == MarketNameFor(market, wrapper) {
+				wrapper.summaries.Set(market, &environment.MarketSummary{
+					Ask:    decimal.NewFromFloat(poloniexSummary.Ask),
+					Bid:    decimal.NewFromFloat(poloniexSummary.Bid),
+					Last:   decimal.NewFromFloat(poloniexSummary.Last),
+					Volume: decimal.NewFromFloat(poloniexSummary.BaseVolume),
+				})
+				break
+			}
+		}
 	}
 
-	poloniexSummary, notExists := poloniexSummaries[MarketNameFor(market, wrapper)]
+	ret, notExists := wrapper.summaries.Get(market)
 	if notExists {
 		return nil, errors.New("Market not found")
 	}
 
-	return &environment.MarketSummary{
-		Ask:    decimal.NewFromFloat(poloniexSummary.Ask),
-		Bid:    decimal.NewFromFloat(poloniexSummary.Bid),
-		Last:   decimal.NewFromFloat(poloniexSummary.Last),
-		Volume: decimal.NewFromFloat(poloniexSummary.BaseVolume),
-	}, nil
+	return ret, nil
 }
 
 // GetBalance gets the balance of the user of the specified currency.
