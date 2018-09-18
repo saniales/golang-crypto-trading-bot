@@ -164,8 +164,8 @@ func (wrapper BitfinexWrapper) GetTicker(market *environment.Market) (*environme
 
 // GetMarketSummary gets the current market summary.
 func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
-	ret, summaryLoaded := wrapper.summaries.Get(market)
-	if !wrapper.websocketOn {
+	ret, exists := wrapper.summaries.Get(market)
+	if !exists || !wrapper.websocketOn {
 		bitfinexSummary, err := wrapper.api.Ticker.Get(MarketNameFor(market, wrapper))
 		if err != nil {
 			return nil, err
@@ -176,10 +176,6 @@ func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) (*en
 		volume, _ := decimal.NewFromString(bitfinexSummary.Volume)
 		bid, _ := decimal.NewFromString(bitfinexSummary.Bid)
 		ask, _ := decimal.NewFromString(bitfinexSummary.Ask)
-
-		if !summaryLoaded {
-			return nil, errors.New("Summary not loaded")
-		}
 
 		ret = &environment.MarketSummary{
 			High:   high,
