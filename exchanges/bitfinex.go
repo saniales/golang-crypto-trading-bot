@@ -3,6 +3,7 @@ package exchanges
 import (
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -104,18 +105,43 @@ func (wrapper BitfinexWrapper) GetOrderBook(market *environment.Market) (*enviro
 //
 // NOTE: In bitfinex buy and sell orders behave the same (the go bitfinex api automatically puts it on correct side)
 func (wrapper BitfinexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.Orders.Create(MarketNameFor(market, wrapper), amount, limit, bitfinex.OrderTypeExchangeLimit)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprint(orderNumber.ID), nil
+	amount = math.Abs(amount)
+	return wrapper.createOrder(market, bitfinex.OrderTypeLimit, amount, limit)
 }
 
 // SellLimit performs a limit sell action.
 //
 // NOTE: In bitfinex buy and sell orders behave the same (the go bitfinex api automatically puts it on correct side)
 func (wrapper BitfinexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
-	return wrapper.BuyLimit(market, amount, limit)
+	amount = -math.Abs(amount) // a sell is a buy with negative amount.
+	return wrapper.createOrder(market, bitfinex.OrderTypeLimit, amount, limit)
+}
+
+// BuyMarket performs a limit buy action.
+//
+// NOTE: In bitfinex buy and sell orders behave the same (the go bitfinex api automatically puts it on correct side)
+func (wrapper BitfinexWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
+	amount = math.Abs(amount)
+	return wrapper.createOrder(market, bitfinex.OrderTypeMarket, amount, 0)
+}
+
+// SellMarket performs a limit sell action.
+//
+// NOTE: In bitfinex buy and sell orders behave the same (the go bitfinex api automatically puts it on correct side)
+func (wrapper BitfinexWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
+	amount = -math.Abs(amount) // a sell is a buy with negative amount.
+	return wrapper.createOrder(market, bitfinex.OrderTypeMarket, amount, 0)
+}
+
+// createOrder creates a generic order.
+//
+// NOTE: In bitfinex buy and sell orders behave the same (in sell the amount is negative)
+func (wrapper BitfinexWrapper) createOrder(market *environment.Market, orderType string, amount float64, price float64) (string, error) {
+	orderNumber, err := wrapper.api.Orders.Create(MarketNameFor(market, wrapper), amount, price, bitfinex.OrderTypeExchangeLimit)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprint(orderNumber.ID), nil
 }
 
 // GetTicker gets the updated ticker for a market.
@@ -203,9 +229,9 @@ func (wrapper BitfinexWrapper) GetBalance(symbol string) (*decimal.Decimal, erro
 func (wrapper BitfinexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {
-		feePercentage = 0.0010
+		feePercentage = 0.0010 // 0.1%
 	} else if orderType == TakerTrade {
-		feePercentage = 0.0020
+		feePercentage = 0.0020 // 0.2%
 	} else {
 		panic("Unknown trade type")
 	}

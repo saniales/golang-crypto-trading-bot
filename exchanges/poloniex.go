@@ -141,6 +141,16 @@ func (wrapper PoloniexWrapper) SellLimit(market *environment.Market, amount floa
 	return fmt.Sprint(orderNumber.OrderNumber), err
 }
 
+// BuyMarket performs a market buy action.
+func (wrapper PoloniexWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
+	panic("Not supported on poloniex")
+}
+
+// SellMarket performs a market sell action.
+func (wrapper PoloniexWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
+	panic("Not supported on poloniex")
+}
+
 // GetTicker gets the updated ticker for a market.
 func (wrapper PoloniexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	poloniexTicker, err := wrapper.api.Ticker()
