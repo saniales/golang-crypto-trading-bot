@@ -32,12 +32,16 @@ const (
 
 //ExchangeWrapper provides a generic wrapper for exchange services.
 type ExchangeWrapper interface {
-	Name() string                                                                                                // Gets the name of the exchange.
-	GetCandles(market *environment.Market) ([]environment.CandleStick, error)                                    // Gets the candle data from the exchange.
-	GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error)                             // Gets the current market summary.
-	GetOrderBook(market *environment.Market) (*environment.OrderBook, error)                                     // Gets the order(ASK + BID) book of a market.
-	BuyLimit(market *environment.Market, amount float64, limit float64) (string, error)                          // Performs a limit buy action.
-	SellLimit(market *environment.Market, amount float64, limit float64) (string, error)                         // Performs a limit sell action.
+	Name() string                                                                    // Gets the name of the exchange.
+	GetCandles(market *environment.Market) ([]environment.CandleStick, error)        // Gets the candle data from the exchange.
+	GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) // Gets the current market summary.
+	GetOrderBook(market *environment.Market) (*environment.OrderBook, error)         // Gets the order(ASK + BID) book of a market.
+
+	BuyLimit(market *environment.Market, amount float64, limit float64) (string, error)  // Performs a limit buy action.
+	SellLimit(market *environment.Market, amount float64, limit float64) (string, error) // Performs a limit sell action.
+	BuyMarket(market *environment.Market, amount float64) (string, error)                // Performs a market buy action.
+	SellMarket(market *environment.Market, amount float64) (string, error)               // Performs a market sell action.
+
 	CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 // Calculates the trading fees for an order on a specified market.
 	CalculateWithdrawFees(market *environment.Market, amount float64) float64                                    // Calculates the withdrawal fees on a specified market.
 

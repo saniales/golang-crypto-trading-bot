@@ -102,6 +102,16 @@ func (wrapper BittrexWrapper) SellLimit(market *environment.Market, amount float
 	return orderNumber, err
 }
 
+// BuyMarket performs a market buy action.
+func (wrapper BittrexWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
+	panic("Not supported on bittrex")
+}
+
+// SellMarket performs a market sell action.
+func (wrapper BittrexWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
+	panic("Not supported on bittrex")
+}
+
 // GetTicker gets the updated ticker for a market.
 func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	bittrexTicker, err := wrapper.api.GetTicker(MarketNameFor(market, wrapper))

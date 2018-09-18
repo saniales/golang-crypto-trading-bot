@@ -129,6 +129,24 @@ func (wrapper KrakenWrapper) SellLimit(market *environment.Market, amount float6
 	return fmt.Sprint(orderNumber.TransactionIds), nil
 }
 
+// BuyMarket performs a market buy action.
+func (wrapper KrakenWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
+	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "buy", "market", fmt.Sprint(amount), map[string]string{})
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprint(orderNumber.TransactionIds), nil
+}
+
+// SellMarket performs a market sell action.
+func (wrapper KrakenWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
+	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "sell", "market", fmt.Sprint(amount), map[string]string{})
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprint(orderNumber.TransactionIds), nil
+}
+
 // GetTicker gets the updated ticker for a market.
 func (wrapper KrakenWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	krakenTicker, err := wrapper.api.Ticker(MarketNameFor(market, wrapper))
@@ -277,15 +295,15 @@ func (wrapper KrakenWrapper) CalculateWithdrawFees(market *environment.Market, a
 
 // FeedConnect connects to the feed of the exchange.
 func (wrapper KrakenWrapper) FeedConnect() {
-	panic("Not Implemented")
+	panic("Websocket Not Supported")
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 func (wrapper KrakenWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
-	panic("Not Implemented")
+	panic("Websocket Not Supported")
 }
 
 // UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
 func (wrapper KrakenWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
-	panic("Not Implemented")
+	panic("Websocket Not Supported")
 }
