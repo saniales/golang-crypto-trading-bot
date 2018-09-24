@@ -35,12 +35,15 @@ exchange_configs:
   - exchange: bittrex
     public_key: your_bittrex_public_key
     secret_key: your_bittrex_secret_key
+    websocket_enabled: true
   - exchange: binance
     public_key: your_binance_public_key
     secret_key: your_binance_secret_key
+    websocket_enabled: true
   - exchange: bitfinex
     public_key: your_bitfinex_public_key
     secret_key: your_bitfinex_secret_key
+    websocket_enabled: true
 strategies:
   - strategy: your_strategy_name
     markets:
