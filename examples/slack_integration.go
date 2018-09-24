@@ -22,6 +22,7 @@ import (
 	"github.com/nlopes/slack"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
+	"github.com/saniales/golang-crypto-trading-bot/strategies"
 	"github.com/shomali11/slacker"
 	"github.com/sirupsen/logrus"
 )
@@ -30,8 +31,8 @@ var slackBot *slacker.Slacker
 
 // The following slack integration allows to send messages as a strategy.
 // RTM not supported (and usually not requested when trading, this is an automated slackBot).
-var slackIntegrationExample = IntervalStrategy{
-	Model: StrategyModel{
+var slackIntegrationExample = strategies.IntervalStrategy{
+	Model: strategies.StrategyModel{
 		Name: "slackIntegrationExample",
 		Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			// connect slack token

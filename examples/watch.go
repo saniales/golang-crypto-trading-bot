@@ -21,18 +21,19 @@ import (
 
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
+	"github.com/saniales/golang-crypto-trading-bot/strategies"
 )
 
 // Watch5Min prints out the info of the market every 5 minutes.
-var Watch5Min Strategy = IntervalStrategy{
-	Model: StrategyModel{
+var Watch5Min Strategy = strategies.IntervalStrategy{
+	Model: strategies.StrategyModel{
 		Name: "Watch5Min",
 		Setup: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
 			fmt.Println("Watch5Min starting")
 			return nil
 		},
 		OnUpdate: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
-			_, err := wrappers[0].GetTicker(markets[0])
+			_, err := wrappers[0].GetMarketSummary(markets[0])
 			if err != nil {
 				return err
 			}

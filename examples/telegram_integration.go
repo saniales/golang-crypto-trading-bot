@@ -5,14 +5,15 @@ import (
 
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
+	"github.com/saniales/golang-crypto-trading-bot/strategies"
 	"github.com/sirupsen/logrus"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 var telegramBot *tb.Bot
 
-var telegramIntegrationExample = IntervalStrategy{
-	Model: StrategyModel{
+var telegramIntegrationExample = strategies.IntervalStrategy{
+	Model: strategies.StrategyModel{
 		Name: "telegramIntegrationExample",
 		Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			telegramBot, err := tb.NewBot(tb.Settings{
