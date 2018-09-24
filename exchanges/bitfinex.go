@@ -190,10 +190,6 @@ func (wrapper BitfinexWrapper) GetMarketSummary(market *environment.Market) (*en
 		return ret, nil
 	}
 
-	if !summaryLoaded {
-		return nil, errors.New("Summary not loaded")
-	}
-
 	return ret, nil
 }
 
