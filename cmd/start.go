@@ -72,6 +72,9 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 	wrappers := make([]exchanges.ExchangeWrapper, len(botConfig.ExchangeConfigs))
 	for i, config := range botConfig.ExchangeConfigs {
 		wrappers[i] = helpers.InitExchange(config)
+		if config.WebsocketEnabled {
+			wrappers[i].FeedConnect()
+		}
 	}
 	fmt.Println("DONE")
 
