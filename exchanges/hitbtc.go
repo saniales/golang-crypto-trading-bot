@@ -70,7 +70,7 @@ func (wrapper HitBtcWrapperV2) GetMarkets() ([]*environment.Market, error) {
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper HitBtcWrapperV2) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 
-	hitbtcOrderBook, err := wrapper.api.GetOrderBook(MarketNameFor(market, wrapper))
+	hitbtcOrderBook, err := wrapper.api.GetOrderbook(MarketNameFor(market, wrapper))
 
 	if err != nil {
 		return nil, err
