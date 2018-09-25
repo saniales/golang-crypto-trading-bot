@@ -29,15 +29,15 @@ import (
 // BinanceWrapper represents the wrapper for the Binance exchange.
 type BinanceWrapper struct {
 	api         *binance.Client
-	summaries   SummaryCache
-	candles     CandlesCache
+	summaries   *SummaryCache
+	candles     *CandlesCache
 	websocketOn bool
 }
 
 // NewBinanceWrapper creates a generic wrapper of the binance API.
 func NewBinanceWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	client := binance.NewClient(publicKey, secretKey)
-	return BinanceWrapper{
+	return &BinanceWrapper{
 		api:         client,
 		summaries:   NewSummaryCache(),
 		candles:     NewCandlesCache(),
@@ -46,16 +46,16 @@ func NewBinanceWrapper(publicKey string, secretKey string) ExchangeWrapper {
 }
 
 // Name returns the name of the wrapped exchange.
-func (wrapper BinanceWrapper) Name() string {
+func (wrapper *BinanceWrapper) Name() string {
 	return "binance"
 }
 
-func (wrapper BinanceWrapper) String() string {
+func (wrapper *BinanceWrapper) String() string {
 	return wrapper.Name()
 }
 
 // GetMarkets Gets all the markets info.
-func (wrapper BinanceWrapper) GetMarkets() ([]*environment.Market, error) {
+func (wrapper *BinanceWrapper) GetMarkets() ([]*environment.Market, error) {
 	binanceMarkets, err := wrapper.api.NewListPricesService().Do(context.Background())
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (wrapper BinanceWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper BinanceWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
+func (wrapper *BinanceWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	binanceOrderBook, err := wrapper.api.NewListOrdersService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 	if err != nil {
 		return nil, err
@@ -118,31 +118,31 @@ func (wrapper BinanceWrapper) GetOrderBook(market *environment.Market) (*environ
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper BinanceWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper *BinanceWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeLimit).Side(binance.SideTypeBuy).Symbol(MarketNameFor(market, wrapper)).Price(fmt.Sprint(limit)).Quantity(fmt.Sprint(amount)).Do(context.Background())
 	return fmt.Sprint(orderNumber.ClientOrderID), err
 }
 
 // SellLimit performs a limit sell action.
-func (wrapper BinanceWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper *BinanceWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeLimit).Side(binance.SideTypeSell).Symbol(MarketNameFor(market, wrapper)).Price(fmt.Sprint(limit)).Quantity(fmt.Sprint(amount)).Do(context.Background())
 	return fmt.Sprint(orderNumber.ClientOrderID), err
 }
 
 // BuyMarket performs a market buy action.
-func (wrapper BinanceWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
+func (wrapper *BinanceWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
 	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeMarket).Side(binance.SideTypeBuy).Symbol(MarketNameFor(market, wrapper)).Quantity(fmt.Sprint(amount)).Do(context.Background())
 	return fmt.Sprint(orderNumber.ClientOrderID), err
 }
 
 // SellMarket performs a market sell action.
-func (wrapper BinanceWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
+func (wrapper *BinanceWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
 	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeMarket).Side(binance.SideTypeSell).Symbol(MarketNameFor(market, wrapper)).Quantity(fmt.Sprint(amount)).Do(context.Background())
 	return fmt.Sprint(orderNumber.ClientOrderID), err
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper BinanceWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
+func (wrapper *BinanceWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	binanceTicker, err := wrapper.api.NewBookTickerService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (wrapper BinanceWrapper) GetTicker(market *environment.Market) (*environmen
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
+func (wrapper *BinanceWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	if !wrapper.websocketOn {
 		hilo, err := wrapper.api.NewListPriceChangeStatsService().Do(context.Background())
 		if err != nil {
@@ -204,7 +204,7 @@ func (wrapper BinanceWrapper) GetMarketSummary(market *environment.Market) (*env
 }
 
 // GetCandles gets the candle data from the exchange.
-func (wrapper BinanceWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+func (wrapper *BinanceWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
 	if !wrapper.websocketOn {
 		binanceCandles, err := wrapper.api.NewKlinesService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 		if err != nil {
@@ -241,7 +241,7 @@ func (wrapper BinanceWrapper) GetCandles(market *environment.Market) ([]environm
 }
 
 // GetBalance gets the balance of the user of the specified currency.
-func (wrapper BinanceWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
+func (wrapper *BinanceWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
 	binanceAccount, err := wrapper.api.NewGetAccountService().Do(context.Background())
 	if err != nil {
 		return nil, err
@@ -263,7 +263,7 @@ func (wrapper BinanceWrapper) GetBalance(symbol string) (*decimal.Decimal, error
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Binance fees are currently hardcoded.
-func (wrapper BinanceWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+func (wrapper *BinanceWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {
 		feePercentage = 0.0010
@@ -277,60 +277,44 @@ func (wrapper BinanceWrapper) CalculateTradingFees(market *environment.Market, a
 }
 
 // CalculateWithdrawFees calculates the withdrawal fees on a specified market.
-func (wrapper BinanceWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+func (wrapper *BinanceWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
 	panic("Not Implemented")
 }
 
 // FeedConnect connects to the feed of the exchange.
-func (wrapper BinanceWrapper) FeedConnect() {
+func (wrapper *BinanceWrapper) FeedConnect(markets []*environment.Market) error {
+	for _, m := range markets {
+		err := wrapper.subscribeMarketSummaryFeed(m)
+		if err != nil {
+			return err
+		}
+	}
 	wrapper.websocketOn = true
-}
 
-var unsubscribe = make(map[string]chan struct{})
-var unsubscribed = make(map[string]chan struct{})
+	return nil
+}
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper BinanceWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
-	if wrapper.websocketOn {
-		doneC, stopC, err := binance.WsMarketStatServe(MarketNameFor(market, wrapper), func(event *binance.WsMarketStatEvent) {
-			high, _ := decimal.NewFromString(event.HighPrice)
-			low, _ := decimal.NewFromString(event.LowPrice)
-			ask, _ := decimal.NewFromString(event.AskPrice)
-			bid, _ := decimal.NewFromString(event.BidPrice)
-			last, _ := decimal.NewFromString(event.LastPrice)
-			volume, _ := decimal.NewFromString(event.BaseVolume)
+func (wrapper *BinanceWrapper) subscribeMarketSummaryFeed(market *environment.Market) error {
+	_, _, err := binance.WsMarketStatServe(MarketNameFor(market, wrapper), func(event *binance.WsMarketStatEvent) {
+		high, _ := decimal.NewFromString(event.HighPrice)
+		low, _ := decimal.NewFromString(event.LowPrice)
+		ask, _ := decimal.NewFromString(event.AskPrice)
+		bid, _ := decimal.NewFromString(event.BidPrice)
+		last, _ := decimal.NewFromString(event.LastPrice)
+		volume, _ := decimal.NewFromString(event.BaseVolume)
 
-			wrapper.summaries.Set(market, &environment.MarketSummary{
-				High:   high,
-				Low:    low,
-				Ask:    ask,
-				Bid:    bid,
-				Last:   last,
-				Volume: volume,
-			})
-		}, func(error) {})
-
-		if err != nil {
-			panic(err)
-		}
-
-		unsubscribe[MarketNameFor(market, wrapper)] = stopC
-		unsubscribed[MarketNameFor(market, wrapper)] = doneC
+		wrapper.summaries.Set(market, &environment.MarketSummary{
+			High:   high,
+			Low:    low,
+			Ask:    ask,
+			Bid:    bid,
+			Last:   last,
+			Volume: volume,
+		})
+	}, func(error) {})
+	if err != nil {
+		return err
 	}
-}
-
-// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
-func (wrapper BinanceWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
-	if wrapper.websocketOn {
-		tickerKey := MarketNameFor(market, wrapper)
-
-		unsubscribe[tickerKey] <- struct{}{}
-
-		<-unsubscribed[tickerKey]
-
-		close(unsubscribe[tickerKey])
-		close(unsubscribed[tickerKey])
-		delete(unsubscribe, tickerKey)
-		delete(unsubscribed, tickerKey)
-	}
+	return nil
 }

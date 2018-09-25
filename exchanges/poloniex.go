@@ -30,32 +30,33 @@ import (
 type PoloniexWrapper struct {
 	api           *poloniex.Poloniex // access to Poloniex API
 	bindedTickers map[string]bool    // if true, i am subscribing to market ticker.
-	summaries     SummaryCache
-	candles       CandlesCache
+	summaries     *SummaryCache
+	candles       *CandlesCache
 	websocketOn   bool
 }
 
 // NewPoloniexWrapper creates a generic wrapper of the poloniex API.
 func NewPoloniexWrapper(publicKey string, secretKey string) ExchangeWrapper {
-	return PoloniexWrapper{
+	return &PoloniexWrapper{
 		api:           poloniex.NewWithCredentials(publicKey, secretKey),
 		bindedTickers: make(map[string]bool),
 		summaries:     NewSummaryCache(),
+		candles:       NewCandlesCache(),
 		websocketOn:   false,
 	}
 }
 
 // Name returns the name of the wrapped exchange.
-func (wrapper PoloniexWrapper) Name() string {
+func (wrapper *PoloniexWrapper) Name() string {
 	return "poloniex"
 }
 
-func (wrapper PoloniexWrapper) String() string {
+func (wrapper *PoloniexWrapper) String() string {
 	return wrapper.Name()
 }
 
 // GetMarkets gets all the markets info.
-func (wrapper PoloniexWrapper) GetMarkets() ([]*environment.Market, error) {
+func (wrapper *PoloniexWrapper) GetMarkets() ([]*environment.Market, error) {
 	poloniexMarkets, err := wrapper.api.Currencies()
 	if err != nil {
 		return nil, err
@@ -75,7 +76,7 @@ func (wrapper PoloniexWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetCandles gets the candle data from the exchange.
-func (wrapper PoloniexWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+func (wrapper *PoloniexWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
 	if !wrapper.websocketOn {
 		poloniesCandles, err := wrapper.api.ChartData(MarketNameFor(market, wrapper))
 		if err != nil {
@@ -106,7 +107,7 @@ func (wrapper PoloniexWrapper) GetCandles(market *environment.Market) ([]environ
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper PoloniexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
+func (wrapper *PoloniexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	poloniexOrderBook, err := wrapper.api.OrderBook(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err
@@ -130,29 +131,29 @@ func (wrapper PoloniexWrapper) GetOrderBook(market *environment.Market) (*enviro
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper PoloniexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper *PoloniexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.Buy(MarketNameFor(market, wrapper), amount, limit)
 	return fmt.Sprint(orderNumber.OrderNumber), err
 }
 
 // SellLimit performs a limit sell action.
-func (wrapper PoloniexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper *PoloniexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.Sell(MarketNameFor(market, wrapper), amount, limit)
 	return fmt.Sprint(orderNumber.OrderNumber), err
 }
 
 // BuyMarket performs a market buy action.
-func (wrapper PoloniexWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
+func (wrapper *PoloniexWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
 	panic("Not supported on poloniex")
 }
 
 // SellMarket performs a market sell action.
-func (wrapper PoloniexWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
+func (wrapper *PoloniexWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
 	panic("Not supported on poloniex")
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper PoloniexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
+func (wrapper *PoloniexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	poloniexTicker, err := wrapper.api.Ticker()
 	if err != nil {
 		return nil, err
@@ -170,7 +171,7 @@ func (wrapper PoloniexWrapper) GetTicker(market *environment.Market) (*environme
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper PoloniexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
+func (wrapper *PoloniexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	if !wrapper.websocketOn {
 		poloniexSummaries, err := wrapper.api.Ticker()
 		if err != nil {
@@ -190,8 +191,8 @@ func (wrapper PoloniexWrapper) GetMarketSummary(market *environment.Market) (*en
 		}
 	}
 
-	ret, notExists := wrapper.summaries.Get(market)
-	if notExists {
+	ret, exists := wrapper.summaries.Get(market)
+	if !exists {
 		return nil, errors.New("Market not found")
 	}
 
@@ -199,7 +200,7 @@ func (wrapper PoloniexWrapper) GetMarketSummary(market *environment.Market) (*en
 }
 
 // GetBalance gets the balance of the user of the specified currency.
-func (wrapper PoloniexWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
+func (wrapper *PoloniexWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
 	poloniexBalances, err := wrapper.api.Balances()
 	if err != nil {
 		return nil, err
@@ -218,7 +219,7 @@ func (wrapper PoloniexWrapper) GetBalance(symbol string) (*decimal.Decimal, erro
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Binance fees are currently hardcoded.
-func (wrapper PoloniexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+func (wrapper *PoloniexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	// NOTE: possibility to use wrapper FeesInfo function.
 	var feePercentage float64
 	if orderType == MakerTrade {
@@ -233,18 +234,24 @@ func (wrapper PoloniexWrapper) CalculateTradingFees(market *environment.Market, 
 }
 
 // CalculateWithdrawFees calculates the withdrawal fees on a specified market.
-func (wrapper PoloniexWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+func (wrapper *PoloniexWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
 	panic("Not Implemented")
 }
 
 // FeedConnect connects to the feed of the poloniex websocket.
-func (wrapper PoloniexWrapper) FeedConnect() {
+func (wrapper *PoloniexWrapper) FeedConnect(markets []*environment.Market) error {
 	wrapper.api.StartWS()
 	wrapper.websocketOn = true
+
+	for _, m := range markets {
+		wrapper.subscribeMarketSummaryFeed(m)
+	}
+
+	return nil
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
+func (wrapper *PoloniexWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
 	if wrapper.websocketOn {
 		subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
 		if len(wrapper.bindedTickers) == 0 {
@@ -252,7 +259,6 @@ func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Ma
 
 			wrapper.api.On("ticker", func(t poloniex.WSTicker) {
 				for bindedTicker := range wrapper.bindedTickers {
-
 					if bindedTicker == t.Pair {
 						wrapper.api.Emit(subTicker, t)
 					}
@@ -273,19 +279,6 @@ func (wrapper PoloniexWrapper) SubscribeMarketSummaryFeed(market *environment.Ma
 					Volume: decimal.NewFromFloat(t.BaseVolume),
 				})
 			})
-		}
-	}
-}
-
-// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
-func (wrapper PoloniexWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
-	if wrapper.websocketOn {
-		subTicker := fmt.Sprintf("ticker:%s", MarketNameFor(market, wrapper))
-		wrapper.api.Off(subTicker, func() {})
-		delete(wrapper.bindedTickers, MarketNameFor(market, wrapper))
-
-		if len(wrapper.bindedTickers) == 0 {
-			wrapper.api.Unsubscribe("ticker")
 		}
 	}
 }
