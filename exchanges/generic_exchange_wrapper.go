@@ -16,6 +16,8 @@
 package exchanges
 
 import (
+	"errors"
+
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
 )
@@ -47,10 +49,11 @@ type ExchangeWrapper interface {
 
 	GetBalance(symbol string) (*decimal.Decimal, error) // Gets the balance of the user of the specified currency.
 
-	FeedConnect()                                            // Connects to the feed of the exchange.
-	SubscribeMarketSummaryFeed(market *environment.Market)   // Subscribes to the Market Summary Feed service.
-	UnsubscribeMarketSummaryFeed(market *environment.Market) // Unsubscribes from the Market Summary Feed service.
+	FeedConnect(markets []*environment.Market) error // Connects to the feed of the exchange.
 }
+
+// ErrWebsocketNotSupported is the error representing when an exchange does not support websocket.
+var ErrWebsocketNotSupported = errors.New("Cannot use websocket: exchange does not support it")
 
 // MarketNameFor gets the market name as seen by the exchange.
 func MarketNameFor(m *environment.Market, wrapper ExchangeWrapper) string {

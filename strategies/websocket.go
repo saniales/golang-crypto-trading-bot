@@ -65,11 +65,11 @@ var example = WebsocketStrategy{
 		Name: "example",
 		Setup: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
 			for _, wrapper := range wrappers {
-				wrapper.FeedConnect()
-
-				for _, market := range markets {
-					wrapper.SubscribeMarketSummaryFeed(market)
+				err := wrapper.FeedConnect(markets)
+				if err == exchanges.ErrWebsocketNotSupported || err == nil {
+					continue
 				}
+				return err
 			}
 			return nil
 		},
@@ -78,11 +78,6 @@ var example = WebsocketStrategy{
 			return nil
 		},
 		TearDown: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
-			for _, wrapper := range wrappers {
-				for _, market := range markets {
-					wrapper.UnsubscribeMarketSummaryFeed(market)
-				}
-			}
 			return nil
 		},
 		OnError: func(err error) {

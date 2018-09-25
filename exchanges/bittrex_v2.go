@@ -27,7 +27,7 @@ import (
 type BittrexWrapperV2 struct {
 	PublicKey string
 	SecretKey string
-	summaries SummaryCache
+	summaries *SummaryCache
 }
 
 // NewBittrexV2Wrapper creates a generic wrapper of the bittrex API v2.0.
@@ -164,20 +164,13 @@ func (wrapper BittrexWrapperV2) CalculateWithdrawFees(market *environment.Market
 // FeedConnect connects to the feed of the exchange.
 //
 //     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapperV2) FeedConnect() {
-	panic("Not Implemented")
+func (wrapper BittrexWrapperV2) FeedConnect(markets []*environment.Market) error {
+	return ErrWebsocketNotSupported
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 //
 //     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapperV2) SubscribeMarketSummaryFeed(market *environment.Market) {
-	panic("Not Implemented")
-}
-
-// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
-//
-//     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapperV2) UnsubscribeMarketSummaryFeed(market *environment.Market) {
+func (wrapper BittrexWrapperV2) subscribeMarketSummaryFeed(market *environment.Market) {
 	panic("Not Implemented")
 }

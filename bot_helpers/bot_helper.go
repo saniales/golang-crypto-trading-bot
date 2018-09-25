@@ -18,6 +18,8 @@ func InitExchange(exchangeConfig environment.ExchangeConfig) exchanges.ExchangeW
 		return exchanges.NewBinanceWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
 	case "bitfinex":
 		return exchanges.NewBitfinexWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
+	case "hitbtc":
+		return exchanges.NewHitBtcV2Wrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey)
 	default:
 		return nil
 	}

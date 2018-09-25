@@ -30,8 +30,8 @@ import (
 // BittrexWrapper provides a Generic wrapper of the Bittrex API.
 type BittrexWrapper struct {
 	api                 *api.Bittrex //Represents the helper of the Bittrex API.
-	summaries           SummaryCache
-	candles             CandlesCache
+	summaries           *SummaryCache
+	candles             *CandlesCache
 	websocketOn         bool
 	unsubscribeChannels map[*environment.Market]chan bool
 }
@@ -208,14 +208,22 @@ func (wrapper BittrexWrapper) CalculateWithdrawFees(market *environment.Market, 
 }
 
 // FeedConnect connects to the feed of the exchange.
-func (wrapper BittrexWrapper) FeedConnect() {
+func (wrapper BittrexWrapper) FeedConnect(markets []*environment.Market) error {
+	return ErrWebsocketNotSupported
+
 	wrapper.websocketOn = true
+
+	for _, m := range markets {
+		wrapper.subscribeMarketSummaryFeed(m)
+	}
+
+	return nil
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 //
 //     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
+func (wrapper BittrexWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
 	results := make(chan api.ExchangeState)
 
 	wrapper.api.SubscribeExchangeUpdate(MarketNameFor(market, wrapper), results, wrapper.unsubscribeChannels[market])
@@ -231,11 +239,4 @@ func (wrapper BittrexWrapper) SubscribeMarketSummaryFeed(market *environment.Mar
 			}
 		}
 	}(market, results)
-}
-
-// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
-//
-//     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
-	wrapper.unsubscribeChannels[market] <- true
 }
