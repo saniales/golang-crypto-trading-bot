@@ -289,7 +289,7 @@ func (wrapper *BitfinexWrapper) subscribeMarketSummaryFeed(market *environment.M
 			if !stillOpen {
 				return
 			}
-			if len(values) == 10 { // for client bug :
+			if len(values) == 10 { // for client bug : https://github.com/bitfinexcom/bitfinex-api-go/issues/133
 				wrapper.summaries.Set(market, &environment.MarketSummary{
 					Bid:    decimal.NewFromFloat(values[0]),
 					Ask:    decimal.NewFromFloat(values[2]),
