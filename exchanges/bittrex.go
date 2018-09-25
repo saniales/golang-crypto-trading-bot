@@ -16,6 +16,8 @@
 package exchanges
 
 import (
+	"errors"
+
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
 
@@ -28,13 +30,19 @@ import (
 // BittrexWrapper provides a Generic wrapper of the Bittrex API.
 type BittrexWrapper struct {
 	api                 *api.Bittrex //Represents the helper of the Bittrex API.
+	summaries           *SummaryCache
+	candles             *CandlesCache
+	websocketOn         bool
 	unsubscribeChannels map[*environment.Market]chan bool
 }
 
 // NewBittrexWrapper creates a generic wrapper of the bittrex API.
 func NewBittrexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 	return BittrexWrapper{
-		api: api.New(publicKey, secretKey),
+		api:         api.New(publicKey, secretKey),
+		websocketOn: false,
+		summaries:   NewSummaryCache(),
+		candles:     NewCandlesCache(),
 	}
 }
 
@@ -128,20 +136,29 @@ func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environmen
 
 // GetMarketSummary gets the current market summary.
 func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
-	summaryArray, err := wrapper.api.GetMarketSummary(MarketNameFor(market, wrapper))
-	if err != nil {
-		return nil, err
-	}
-	summary := summaryArray[0]
+	if !wrapper.websocketOn {
+		summaryArray, err := wrapper.api.GetMarketSummary(MarketNameFor(market, wrapper))
+		if err != nil {
+			return nil, err
+		}
+		summary := summaryArray[0]
 
-	return &environment.MarketSummary{
-		High:   summary.High,
-		Low:    summary.Low,
-		Volume: summary.Volume,
-		Bid:    summary.Bid,
-		Ask:    summary.Ask,
-		Last:   summary.Last,
-	}, nil
+		wrapper.summaries.Set(market, &environment.MarketSummary{
+			High:   summary.High,
+			Low:    summary.Low,
+			Volume: summary.Volume,
+			Bid:    summary.Bid,
+			Ask:    summary.Ask,
+			Last:   summary.Last,
+		})
+	}
+
+	val, exists := wrapper.summaries.Get(market)
+	if !exists {
+		return nil, errors.New("Summary not yet loaded")
+	}
+
+	return val, nil
 }
 
 //convertFromBittrexCandle converts a bittrex candle to a environment.CandleStick.
@@ -161,7 +178,12 @@ func (wrapper BittrexWrapper) GetCandles(market *environment.Market) ([]environm
 
 // GetBalance gets the balance of the user of the specified currency.
 func (wrapper BittrexWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
-	panic("Not Implemented")
+	balance, err := wrapper.api.GetBalance(symbol)
+	if err != nil {
+		return nil, err
+	}
+
+	return &balance.Available, nil
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
@@ -186,22 +208,35 @@ func (wrapper BittrexWrapper) CalculateWithdrawFees(market *environment.Market, 
 }
 
 // FeedConnect connects to the feed of the exchange.
-func (wrapper BittrexWrapper) FeedConnect() {
+func (wrapper BittrexWrapper) FeedConnect(markets []*environment.Market) error {
+	return ErrWebsocketNotSupported
 
+	wrapper.websocketOn = true
+
+	for _, m := range markets {
+		wrapper.subscribeMarketSummaryFeed(m)
+	}
+
+	return nil
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 //
 //     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
+func (wrapper BittrexWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
 	results := make(chan api.ExchangeState)
 
 	wrapper.api.SubscribeExchangeUpdate(MarketNameFor(market, wrapper), results, wrapper.unsubscribeChannels[market])
-}
-
-// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
-//
-//     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
-	panic("Not supported on bittrex v1 API")
+	panic("Not implemented")
+	go func(market *environment.Market, results <-chan api.ExchangeState) {
+		for {
+			select {
+			case <-results:
+				//TODO: handle result
+			case <-wrapper.unsubscribeChannels[market]:
+				close(wrapper.unsubscribeChannels[market])
+				delete(wrapper.unsubscribeChannels, market)
+			}
+		}
+	}(market, results)
 }

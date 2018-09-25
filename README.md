@@ -1,7 +1,7 @@
 # golang-crypto-trading-bot
 
 [![GoDoc](https://godoc.org/github.com/saniales/golang-crypto-trading-bot?status.svg)](https://godoc.org/github.com/saniales/golang-crypto-trading-bot)
-[![Travis CI](https://img.shields.io/travis/saniales/golang-crypto-trading-bot.svg)]((https://github.com/saniales/golang-crypto-trading-bot))
+[![Travis CI](https://img.shields.io/travis/saniales/golang-crypto-trading-bot.svg)]((https://travis-ci.org/saniales/golang-crypto-trading-bot))
 [![GitHub release](https://img.shields.io/github/release/saniales/golang-crypto-trading-bot.svg)](https://github.com/saniales/golang-crypto-trading-bot/releases)
 [![license](https://img.shields.io/github/license/saniales/golang-crypto-trading-bot.svg?maxAge=2592000)](https://github.com/saniales/golang-crypto-trading-bot/LICENSE)
 
@@ -35,12 +35,15 @@ exchange_configs:
   - exchange: bittrex
     public_key: your_bittrex_public_key
     secret_key: your_bittrex_secret_key
+    websocket_enabled: true
   - exchange: binance
     public_key: your_binance_public_key
     secret_key: your_binance_secret_key
+    websocket_enabled: true
   - exchange: bitfinex
     public_key: your_bitfinex_public_key
     secret_key: your_bitfinex_secret_key
+    websocket_enabled: true
 strategies:
   - strategy: your_strategy_name
     markets:

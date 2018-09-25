@@ -19,9 +19,10 @@ package environment
 //
 //     Can be used to generate an ExchangeWrapper.
 type ExchangeConfig struct {
-	ExchangeName string `yaml:"exchange"`   // Represents the exchange name.
-	PublicKey    string `yaml:"public_key"` // Represents the public key used to connect to Exchange API.
-	SecretKey    string `yaml:"secret_key"` // Represents the secret key used to connect to Exchange API.
+	ExchangeName     string `yaml:"exchange"`          // Represents the exchange name.
+	PublicKey        string `yaml:"public_key"`        // Represents the public key used to connect to Exchange API.
+	SecretKey        string `yaml:"secret_key"`        // Represents the secret key used to connect to Exchange API.
+	WebsocketEnabled bool   `yaml:"websocket_enabled"` // Represents whether websocket communication is enabled for this exchange configuration or REST API is involved.
 }
 
 // StrategyConfig contains where a strategy will be applied in the specified exchange.

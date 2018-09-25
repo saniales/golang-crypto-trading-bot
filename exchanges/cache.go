@@ -13,8 +13,8 @@ type SummaryCache struct {
 }
 
 // NewSummaryCache creates a new SummaryCache Object
-func NewSummaryCache() SummaryCache {
-	return SummaryCache{
+func NewSummaryCache() *SummaryCache {
+	return &SummaryCache{
 		mutex:    &sync.RWMutex{},
 		internal: make(map[*environment.Market]*environment.MarketSummary),
 	}
@@ -44,8 +44,8 @@ type CandlesCache struct {
 }
 
 // NewCandlesCache creates a new SummaryCache Object
-func NewCandlesCache() CandlesCache {
-	return CandlesCache{
+func NewCandlesCache() *CandlesCache {
+	return &CandlesCache{
 		mutex:    &sync.RWMutex{},
 		internal: make(map[*environment.Market][]environment.CandleStick),
 	}

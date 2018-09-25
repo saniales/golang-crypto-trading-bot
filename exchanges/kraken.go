@@ -31,8 +31,8 @@ import (
 // KrakenWrapper provides a Generic wrapper of the Kraken API.
 type KrakenWrapper struct {
 	api         *krakenapi.KrakenApi
-	summaries   SummaryCache
-	candles     CandlesCache
+	summaries   *SummaryCache
+	candles     *CandlesCache
 	websocketOn bool
 }
 
@@ -294,16 +294,11 @@ func (wrapper KrakenWrapper) CalculateWithdrawFees(market *environment.Market, a
 }
 
 // FeedConnect connects to the feed of the exchange.
-func (wrapper KrakenWrapper) FeedConnect() {
-	panic("Websocket Not Supported")
+func (wrapper KrakenWrapper) FeedConnect(markets []*environment.Market) error {
+	return ErrWebsocketNotSupported
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper KrakenWrapper) SubscribeMarketSummaryFeed(market *environment.Market) {
-	panic("Websocket Not Supported")
-}
-
-// UnsubscribeMarketSummaryFeed unsubscribes from the Market Summary Feed service.
-func (wrapper KrakenWrapper) UnsubscribeMarketSummaryFeed(market *environment.Market) {
+func (wrapper KrakenWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
 	panic("Websocket Not Supported")
 }
