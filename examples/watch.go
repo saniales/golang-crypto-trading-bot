@@ -25,8 +25,8 @@ import (
 )
 
 // Watch5Min prints out the info of the market every 5 minutes.
-var Watch5Min Strategy = strategies.IntervalStrategy{
-	Model: StrategyModel{
+var Watch5Min = strategies.IntervalStrategy{
+	Model: strategies.StrategyModel{
 		Name: "Watch5Min",
 		Setup: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
 			fmt.Println("Watch5Min starting")

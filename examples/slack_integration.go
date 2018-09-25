@@ -32,7 +32,7 @@ var slackBot *slacker.Slacker
 // The following slack integration allows to send messages as a strategy.
 // RTM not supported (and usually not requested when trading, this is an automated slackBot).
 var slackIntegrationExample = strategies.IntervalStrategy{
-	Model: StrategyModel{
+	Model: strategies.StrategyModel{
 		Name: "slackIntegrationExample",
 		Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			// connect slack token

@@ -13,7 +13,7 @@ import (
 var telegramBot *tb.Bot
 
 var telegramIntegrationExample = strategies.IntervalStrategy{
-	Model: StrategyModel{
+	Model: strategies.StrategyModel{
 		Name: "telegramIntegrationExample",
 		Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			telegramBot, err := tb.NewBot(tb.Settings{
