@@ -161,22 +161,9 @@ func (wrapper *BinanceWrapper) GetTicker(market *environment.Market) (*environme
 // GetMarketSummary gets the current market summary.
 func (wrapper *BinanceWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	if !wrapper.websocketOn {
-		hilo, err := wrapper.api.NewListPriceChangeStatsService().Do(context.Background())
+		binanceSummary, err := wrapper.api.NewPriceChangeStatsService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 		if err != nil {
 			return nil, err
-		}
-
-		var binanceSummary *binance.PriceChangeStats
-
-		for _, val := range hilo {
-			if val.Symbol == MarketNameFor(market, wrapper) {
-				binanceSummary = val
-				break
-			}
-		}
-
-		if binanceSummary == nil {
-			return nil, errors.New("Symbol not found")
 		}
 
 		ask, _ := decimal.NewFromString(binanceSummary.AskPrice)
