@@ -251,7 +251,7 @@ func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error
 	}
 
 	for _, m := range markets {
-		wrapper.subscribeMarketSummaryFeed(m)
+		wrapper.subscribeFeeds(m)
 	}
 
 	wrapper.websocketOn = true
@@ -262,7 +262,7 @@ func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error
 }
 
 // subscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper *BitfinexWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
+func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 	tickers := make(chan []float64)
 	orderbooks := make(chan []float64)
 	trades := make(chan []float64)
