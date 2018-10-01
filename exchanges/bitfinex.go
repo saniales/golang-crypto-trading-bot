@@ -18,6 +18,7 @@ type BitfinexWrapper struct {
 	websocketOn         bool
 	unsubscribeChannels map[string]chan bool
 	summaries           *SummaryCache
+	orderbook           *OrderbookCache
 }
 
 // NewBitfinexWrapper creates a generic wrapper of the bittrex API.
@@ -26,6 +27,7 @@ func NewBitfinexWrapper(publicKey string, secretKey string) ExchangeWrapper {
 		api:                 bitfinex.NewClient().Auth(publicKey, secretKey),
 		unsubscribeChannels: make(map[string]chan bool),
 		summaries:           NewSummaryCache(),
+		orderbook:           NewOrderbookCache(),
 		websocketOn:         false,
 	}
 }
@@ -301,23 +303,141 @@ func (wrapper *BitfinexWrapper) subscribeMarketSummaryFeed(market *environment.M
 		}
 	}
 
-	/*
-		handleOrderbook := func(results <-chan []float64, tickerKey string) {
-			for {
-				values, closed := <-results
-				if closed {
-					return
-				}
-				orderbook := wrapper
-				wrapper.summaries.Set(market, &environment.OrderBook{
-					Bid:    decimal.NewFromFloat(values[0]),
-					Ask:    decimal.NewFromFloat(values[2]),
-					Volume: decimal.NewFromFloat(values[7]),
-					High:   decimal.NewFromFloat(values[8]),
-					Low:    decimal.NewFromFloat(values[9]),
-				})
+	handleOrderbook := func(results <-chan []float64, m *environment.Market) {
+		for {
+			// values : []float64 { PRICE, COUNT, TOTAL_AMOUNT }
+			values, closed := <-results
+			if closed {
+				return
 			}
-		}*/
+
+			orderbook, initialized := wrapper.orderbook.Get(m)
+			if !initialized {
+				orderbook = &environment.OrderBook{
+					Asks: make([]environment.Order, 0, 25),
+					Bids: make([]environment.Order, 0, 25),
+				}
+			}
+
+			price := decimal.NewFromFloat(values[0])
+			count := values[1]
+			amount := decimal.NewFromFloat(values[2])
+
+			if count == 0 { // remove price level
+				var temp []environment.Order
+
+				found := false
+				for i, ask := range orderbook.Asks {
+					if found || ask.Value.GreaterThan(price) {
+						break
+					} else if ask.Value.Equals(price) {
+						temp = append(orderbook.Asks[:i], orderbook.Asks[i+1:]...)
+						found = true
+					}
+				}
+
+				if found {
+					orderbook.Asks = temp
+				} else {
+					var temp []environment.Order
+					for i, bid := range orderbook.Bids {
+						if found || bid.Value.GreaterThan(price) {
+							break
+						} else if bid.Value.Equals(price) {
+							temp = append(orderbook.Bids[:i], orderbook.Bids[i+1:]...)
+							found = true
+						}
+					}
+
+					if found {
+						orderbook.Bids = temp
+					}
+				}
+			} else if amount.GreaterThan(decimal.Zero) { // adding to asks
+				found := false
+				for _, bid := range orderbook.Bids {
+					if found || bid.Value.GreaterThan(price) {
+						break
+					} else if bid.Value.Equals(price) {
+						found = true
+						delta := bid.Quantity.Sub(amount)
+						if amount.GreaterThan(bid.Quantity) {
+							orderbook.Asks = append([]environment.Order{environment.Order{
+								Value:     price,
+								Quantity:  delta,
+								Timestamp: time.Now(),
+							}}, orderbook.Asks...)
+						}
+					}
+				}
+
+				var temp []environment.Order
+				for i, ask := range orderbook.Asks {
+					if found {
+						break
+					} else if ask.Value.GreaterThan(price) {
+						temp = append(orderbook.Asks[:i], environment.Order{
+							Value:     price,
+							Quantity:  amount,
+							Timestamp: time.Now(),
+						})
+						temp = append(temp, orderbook.Asks[i+1:]...)
+
+						found = true
+					} else if ask.Value.Equals(price) {
+						found = true
+						ask.Quantity.Add(amount)
+					}
+				}
+
+				if temp != nil {
+					orderbook.Asks = temp
+				}
+			} else if amount.LessThan(decimal.Zero) {
+				amount = amount.Abs()
+
+				found := false
+				for _, bid := range orderbook.Asks {
+					if found || bid.Value.GreaterThan(price) {
+						break
+					} else if bid.Value.Equals(price) {
+						found = true
+						delta := bid.Quantity.Sub(amount)
+						if amount.GreaterThan(bid.Quantity) {
+							orderbook.Bids = append([]environment.Order{environment.Order{
+								Value:     price,
+								Quantity:  delta,
+								Timestamp: time.Now(),
+							}}, orderbook.Bids...)
+						}
+					}
+				}
+
+				var temp []environment.Order
+				for i, ask := range orderbook.Bids {
+					if found {
+						break
+					} else if ask.Value.GreaterThan(price) {
+						temp = append(orderbook.Bids[:i], environment.Order{
+							Value:     price,
+							Quantity:  amount,
+							Timestamp: time.Now(),
+						})
+						temp = append(temp, orderbook.Bids[i+1:]...)
+
+						found = true
+					} else if ask.Value.Equals(price) {
+						found = true
+						ask.Quantity.Add(amount)
+					}
+				}
+
+				if temp != nil {
+					orderbook.Bids = temp
+				}
+			}
+		}
+	}
 
 	/*
 		handleTrades := func(results <-chan []float64, tickerKey string) {
@@ -338,4 +458,5 @@ func (wrapper *BitfinexWrapper) subscribeMarketSummaryFeed(market *environment.M
 	*/
 
 	go handleTicker(tickers, tickerKey)
+	go handleOrderbook(orderbooks, market)
 }
