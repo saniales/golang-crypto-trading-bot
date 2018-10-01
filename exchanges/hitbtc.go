@@ -237,7 +237,6 @@ func (wrapper *HitBtcWrapperV2) GetMarketSummary(market *environment.Market) (*e
 
 // GetBalance gets the balance of the user of the specified currency.
 func (wrapper *HitBtcWrapperV2) GetBalance(symbol string) (*decimal.Decimal, error) {
-
 	Hitbtcbalance, err := wrapper.api.GetBalances()
 
 	if err != nil {
