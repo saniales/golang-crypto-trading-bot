@@ -17,8 +17,9 @@
 package exchanges
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/juju/errors"
 
 	"github.com/saniales/go-hitbtc"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
@@ -194,23 +195,10 @@ func (wrapper *HitBtcWrapperV2) GetTicker(market *environment.Market) (*environm
 // GetMarketSummary gets the current market summary.
 func (wrapper *HitBtcWrapperV2) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	ret, exists := wrapper.summaries.Get(market)
-	if !exists || !wrapper.websocketOn {
-		hilo, err := wrapper.api.GetAllTicker()
+	if !wrapper.websocketOn {
+		hitbtcSummary, err := wrapper.api.GetTicker(MarketNameFor(market, wrapper))
 		if err != nil {
 			return nil, err
-		}
-
-		var hitbtcSummary *hitbtc.Ticker
-
-		for _, val := range hilo {
-			if val.Symbol == MarketNameFor(market, wrapper) {
-				hitbtcSummary = &val
-				break
-			}
-		}
-
-		if hitbtcSummary == nil {
-			return nil, errors.New("Symbol not found")
 		}
 
 		ask := decimal.NewFromFloat(hitbtcSummary.Ask)
@@ -230,6 +218,11 @@ func (wrapper *HitBtcWrapperV2) GetMarketSummary(market *environment.Market) (*e
 		}
 
 		wrapper.summaries.Set(market, ret)
+		return ret, nil
+	}
+
+	if !exists {
+		return nil, errors.New("Summary not loaded")
 	}
 
 	return ret, nil
@@ -284,7 +277,6 @@ func (wrapper *HitBtcWrapperV2) GetCandles(market *environment.Market) ([]enviro
 // FeedConnect connects to the feed of the exchange.
 func (wrapper *HitBtcWrapperV2) FeedConnect(markets []*environment.Market) error {
 	wrapper.websocketOn = true
-
 	for _, m := range markets {
 		err := wrapper.subscribeMarketSummaryFeed(m)
 		if err != nil {
