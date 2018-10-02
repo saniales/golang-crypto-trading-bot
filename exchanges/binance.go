@@ -305,3 +305,13 @@ func (wrapper *BinanceWrapper) subscribeMarketSummaryFeed(market *environment.Ma
 	}
 	return nil
 }
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *BinanceWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	err := wrapper.api.NewCreateWithdrawService().Address(destinationAddress).Asset(coinTicker).Amount(fmt.Sprint(amount)).Do(context.Background())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
