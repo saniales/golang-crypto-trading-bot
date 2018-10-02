@@ -240,3 +240,12 @@ func (wrapper BittrexWrapper) subscribeMarketSummaryFeed(market *environment.Mar
 		}
 	}(market, results)
 }
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper BittrexWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	_, err := wrapper.api.Withdraw(destinationAddress, coinTicker, decimal.NewFromFloat(amount))
+	if err != nil {
+		return err
+	}
+	return nil
+}

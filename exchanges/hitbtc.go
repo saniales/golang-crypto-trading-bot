@@ -323,3 +323,8 @@ func (wrapper *HitBtcWrapperV2) subscribeMarketSummaryFeed(market *environment.M
 
 	return nil
 }
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *HitBtcWrapperV2) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	panic("Not Implemented")
+}

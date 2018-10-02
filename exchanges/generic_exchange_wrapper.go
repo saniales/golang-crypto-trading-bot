@@ -50,6 +50,8 @@ type ExchangeWrapper interface {
 	GetBalance(symbol string) (*decimal.Decimal, error) // Gets the balance of the user of the specified currency.
 
 	FeedConnect(markets []*environment.Market) error // Connects to the feed of the exchange.
+
+	Withdraw(destinationAddress string, coinTicker string, amount float64) error // Performs a withdraw operation from the exchange to a destination address.
 }
 
 // ErrWebsocketNotSupported is the error representing when an exchange does not support websocket.

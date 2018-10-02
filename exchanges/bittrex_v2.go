@@ -168,9 +168,7 @@ func (wrapper BittrexWrapperV2) FeedConnect(markets []*environment.Market) error
 	return ErrWebsocketNotSupported
 }
 
-// SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-//
-//     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapperV2) subscribeMarketSummaryFeed(market *environment.Market) {
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper BittrexWrapperV2) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
 	panic("Not Implemented")
 }

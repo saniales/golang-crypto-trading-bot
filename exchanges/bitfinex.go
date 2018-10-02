@@ -460,3 +460,16 @@ func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 	go handleTicker(tickers, tickerKey)
 	go handleOrderbook(orderbooks, market)
 }
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *BitfinexWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	status, err := wrapper.api.Wallet.WithdrawCrypto(amount, coinTicker, bitfinex.WALLET_TRADING, destinationAddress)
+	if err != nil {
+		return err
+	}
+	if status[0].Status == "error" {
+		return errors.New(status[0].Message)
+	}
+
+	return nil
+}
