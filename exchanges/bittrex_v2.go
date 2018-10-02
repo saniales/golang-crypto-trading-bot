@@ -169,6 +169,6 @@ func (wrapper BittrexWrapperV2) FeedConnect(markets []*environment.Market) error
 }
 
 // Withdraw performs a withdraw operation from the exchange to a destination address.
-func (wrapper *BittrexWrapperV2) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+func (wrapper BittrexWrapperV2) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
 	panic("Not Implemented")
 }

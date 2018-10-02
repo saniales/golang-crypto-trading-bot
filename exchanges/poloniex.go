@@ -282,3 +282,13 @@ func (wrapper *PoloniexWrapper) subscribeMarketSummaryFeed(market *environment.M
 		}
 	}
 }
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *PoloniexWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	_, err := wrapper.api.Withdraw(coinTicker, amount, destinationAddress)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
