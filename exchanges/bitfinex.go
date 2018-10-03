@@ -139,7 +139,7 @@ func (wrapper *BitfinexWrapper) SellMarket(market *environment.Market, amount fl
 //
 // NOTE: In bitfinex buy and sell orders behave the same (in sell the amount is negative)
 func (wrapper *BitfinexWrapper) createOrder(market *environment.Market, orderType string, amount float64, price float64) (string, error) {
-	orderNumber, err := wrapper.api.Orders.Create(MarketNameFor(market, wrapper), amount, price, bitfinex.OrderTypeExchangeLimit)
+	orderNumber, err := wrapper.api.Orders.Create(MarketNameFor(market, wrapper), amount, price, orderType)
 	if err != nil {
 		return "", err
 	}
