@@ -15,14 +15,21 @@
 
 package environment
 
+// Coin represents a coin ticker
+type Coin string
+
+// Address represents a currency address
+type Address string
+
 // ExchangeConfig Represents a configuration for an API Connection to an exchange.
 //
 //     Can be used to generate an ExchangeWrapper.
 type ExchangeConfig struct {
-	ExchangeName     string `yaml:"exchange"`          // Represents the exchange name.
-	PublicKey        string `yaml:"public_key"`        // Represents the public key used to connect to Exchange API.
-	SecretKey        string `yaml:"secret_key"`        // Represents the secret key used to connect to Exchange API.
-	WebsocketEnabled bool   `yaml:"websocket_enabled"` // Represents whether websocket communication is enabled for this exchange configuration or REST API is involved.
+	ExchangeName     string           `yaml:"exchange"`          // Represents the exchange name.
+	PublicKey        string           `yaml:"public_key"`        // Represents the public key used to connect to Exchange API.
+	SecretKey        string           `yaml:"secret_key"`        // Represents the secret key used to connect to Exchange API.
+	WebsocketEnabled bool             `yaml:"websocket_enabled"` // Represents whether websocket communication is enabled for this exchange configuration or REST API is involved.
+	DepositAddresses map[Coin]Address `yaml:"deposit_addresses"` // Represents the bindings between coins and deposit address on the exchange.
 }
 
 // StrategyConfig contains where a strategy will be applied in the specified exchange.
