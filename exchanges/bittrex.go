@@ -95,7 +95,7 @@ func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) (*environ
 		})
 	}
 
-	return nil, nil
+	return &orderBook, nil
 }
 
 // BuyLimit performs a limit buy action.
