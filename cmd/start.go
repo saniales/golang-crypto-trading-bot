@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	helpers "github.com/saniales/golang-crypto-trading-bot/bot_helpers"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
@@ -71,7 +72,7 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 	fmt.Print("Getting exchange info ... ")
 	wrappers := make([]exchanges.ExchangeWrapper, len(botConfig.ExchangeConfigs))
 	for i, config := range botConfig.ExchangeConfigs {
-		wrappers[i] = helpers.InitExchange(config)
+		wrappers[i] = helpers.InitExchange(config, botConfig.SimulationModeOn, config.FakeBalances)
 	}
 	fmt.Println("DONE")
 
@@ -79,8 +80,11 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 	for _, strategyConf := range botConfig.Strategies {
 		mkts := make([]*environment.Market, len(strategyConf.Markets))
 		for i, mkt := range strategyConf.Markets {
+			currencies := strings.SplitN(mkt.Name, "-", 2)
 			mkts[i] = &environment.Market{
-				Name: mkt.Name,
+				Name:           mkt.Name,
+				BaseCurrency:   currencies[0],
+				MarketCurrency: currencies[1],
 			}
 
 			mkts[i].ExchangeNames = make(map[string]string, len(wrappers))
