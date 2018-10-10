@@ -57,15 +57,15 @@ func init() {
 		os.Exit(0)
 	}()
 
-	RootCmd.PersistentFlags().CountVarP(&GlobalFlags.Verbose, "verbose", "v", "show verbose information when trading : use multiple times to increase verbosity level.")
-
 	RootCmd.Flags().BoolVarP(&rootFlags.Version, "version", "V", false, "show version information.")
+
+	RootCmd.PersistentFlags().CountVarP(&GlobalFlags.Verbose, "verbose", "v", "show verbose information when trading : use multiple times to increase verbosity level.")
 	RootCmd.PersistentFlags().StringVar(&GlobalFlags.ConfigFile, "config-file", "./.bot_config.yaml", "Config file path (default : ./.bot_config.yaml)")
 }
 
 func executeRootCommand(cmd *cobra.Command, args []string) {
 	if rootFlags.Version {
-		fmt.Printf("gobot v. %s\n", versionNumber)
+		fmt.Printf("Golang Crypto Trading Bot v. %s\n", versionNumber)
 	} else {
 		cmd.Help()
 	}

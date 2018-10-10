@@ -16,6 +16,7 @@
 package environment
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -35,6 +36,14 @@ const (
 type OrderBook struct {
 	Asks []Order `json:"asks,required"`
 	Bids []Order `json:"bids,required"`
+}
+
+// String returns the string representation of the object.
+func (book OrderBook) String() string {
+	return fmt.Sprintln("ASKS") +
+		fmt.Sprintln(book.Asks) +
+		fmt.Sprintln("BIDS") +
+		fmt.Sprintln(book.Bids)
 }
 
 //Order represents a single order in the Order Book for a market.

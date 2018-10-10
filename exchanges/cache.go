@@ -76,7 +76,10 @@ type OrderbookCache struct {
 
 // NewOrderbookCache creates a new OrderbookCache Object
 func NewOrderbookCache() *OrderbookCache {
-	return &OrderbookCache{}
+	return &OrderbookCache{
+		mutex:    &sync.RWMutex{},
+		internal: make(map[*environment.Market]*environment.OrderBook),
+	}
 }
 
 // Set sets a value for the specified key.

@@ -3,14 +3,23 @@ exchange_configs:
     public_key: your_bittrex_public_key
     secret_key: your_bittrex_secret_key
     websocket_enabled: true
+    deposit_addresses: 
+      BTC: "BTC_ADDRESS"
+      ETH: "0xETH_ADDRESS"
   - exchange: binance
     public_key: your_binance_public_key
     secret_key: your_binance_secret_key
     websocket_enabled: true
+    deposit_addresses: 
+      BTC: "BTC_ADDRESS"
+      ETH: "0xETH_ADDRESS"
   - exchange: bitfinex
     public_key: your_bitfinex_public_key
     secret_key: your_bitfinex_secret_key
     websocket_enabled: true
+    deposit_addresses: 
+      BTC: "BTC_ADDRESS"
+      ETH: "0xETH_ADDRESS"
 strategies:
   - strategy: your_strategy_name
     markets:

@@ -18,6 +18,7 @@ package exchanges
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/juju/errors"
 
@@ -32,6 +33,7 @@ type HitBtcWrapperV2 struct {
 	ws          *hitbtc.WSClient
 	websocketOn bool
 	summaries   *SummaryCache
+	orderbook   *OrderbookCache
 }
 
 // NewHitBtcV2Wrapper creates a generic wrapper of the HitBtc API v2.0.
@@ -42,6 +44,7 @@ func NewHitBtcV2Wrapper(publicKey string, secretKey string) ExchangeWrapper {
 		ws:          ws,
 		websocketOn: false,
 		summaries:   NewSummaryCache(),
+		orderbook:   NewOrderbookCache(),
 	}
 }
 
@@ -76,31 +79,41 @@ func (wrapper *HitBtcWrapperV2) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper *HitBtcWrapperV2) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
-	hitbtcOrderBook, err := wrapper.api.GetOrderbook(MarketNameFor(market, wrapper))
+	ret, exists := wrapper.orderbook.Get(market)
+	if !wrapper.websocketOn {
+		hitbtcOrderBook, err := wrapper.api.GetOrderbook(MarketNameFor(market, wrapper))
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		ret = &environment.OrderBook{}
+		for _, order := range hitbtcOrderBook.Bid {
+			amount := decimal.NewFromFloat(order.Size)
+			rate := decimal.NewFromFloat(order.Price)
+			ret.Bids = append(ret.Bids, environment.Order{
+				Quantity: amount,
+				Value:    rate,
+			})
+		}
+		for _, order := range hitbtcOrderBook.Ask {
+			amount := decimal.NewFromFloat(order.Size)
+			rate := decimal.NewFromFloat(order.Price)
+			ret.Asks = append(ret.Asks, environment.Order{
+				Quantity: amount,
+				Value:    rate,
+			})
+		}
+
+		wrapper.orderbook.Set(market, ret)
+		return ret, nil
 	}
 
-	var orderBook environment.OrderBook
-	for _, order := range hitbtcOrderBook.Bid {
-		amount := decimal.NewFromFloat(order.Size)
-		rate := decimal.NewFromFloat(order.Price)
-		orderBook.Bids = append(orderBook.Bids, environment.Order{
-			Quantity: amount,
-			Value:    rate,
-		})
-	}
-	for _, order := range hitbtcOrderBook.Ask {
-		amount := decimal.NewFromFloat(order.Size)
-		rate := decimal.NewFromFloat(order.Price)
-		orderBook.Asks = append(orderBook.Asks, environment.Order{
-			Quantity: amount,
-			Value:    rate,
-		})
+	if !exists {
+		return nil, errors.New("Orderbook not loaded")
 	}
 
-	return &orderBook, nil
+	return ret, nil
 }
 
 // BuyLimit performs a limit buy action.
@@ -278,7 +291,7 @@ func (wrapper *HitBtcWrapperV2) GetCandles(market *environment.Market) ([]enviro
 func (wrapper *HitBtcWrapperV2) FeedConnect(markets []*environment.Market) error {
 	wrapper.websocketOn = true
 	for _, m := range markets {
-		err := wrapper.subscribeMarketSummaryFeed(m)
+		err := wrapper.subscribeFeeds(m)
 		if err != nil {
 			return err
 		}
@@ -287,14 +300,9 @@ func (wrapper *HitBtcWrapperV2) FeedConnect(markets []*environment.Market) error
 	return nil
 }
 
-// SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper *HitBtcWrapperV2) subscribeMarketSummaryFeed(market *environment.Market) error {
-	summaryChannel, err := wrapper.ws.SubscribeTicker(MarketNameFor(market, wrapper))
-	if err != nil {
-		return err
-	}
-
-	go func(wrapper *HitBtcWrapperV2, summaryChannel <-chan hitbtc.WSNotificationTickerResponse, m *environment.Market) {
+// subscribeFeeds subscribes to the Market Summary Feed service.
+func (wrapper *HitBtcWrapperV2) subscribeFeeds(market *environment.Market) error {
+	handleTicker := func(wrapper *HitBtcWrapperV2, summaryChannel <-chan hitbtc.WSNotificationTickerResponse, m *environment.Market) {
 		for {
 			summary, stillOpen := <-summaryChannel
 			if !stillOpen {
@@ -319,8 +327,122 @@ func (wrapper *HitBtcWrapperV2) subscribeMarketSummaryFeed(market *environment.M
 
 			wrapper.summaries.Set(m, sum)
 		}
-	}(wrapper, summaryChannel, market)
+	}
 
+	handleOrderbook := func(wrapper *HitBtcWrapperV2, bookSnapshotChannel <-chan hitbtc.WSNotificationOrderbookSnapshot, bookUpdateChannel <-chan hitbtc.WSNotificationOrderbookUpdate, m *environment.Market) {
+		var currentSequence int64
+
+		for {
+			select {
+			case snap, stillOpen := <-bookSnapshotChannel:
+				if !stillOpen {
+					return
+				}
+				if currentSequence > snap.Sequence { // my snapshot is more recent than the one provided
+					continue
+				}
+
+				orderbook := new(environment.OrderBook)
+
+				for _, item := range snap.Ask {
+					price, _ := decimal.NewFromString(item.Price)
+					size, _ := decimal.NewFromString(item.Size)
+
+					orderbook.Asks = append(orderbook.Asks, environment.Order{
+						Value:    price,
+						Quantity: size,
+					})
+				}
+				for _, item := range snap.Bid {
+					price, _ := decimal.NewFromString(item.Price)
+					size, _ := decimal.NewFromString(item.Size)
+
+					orderbook.Bids = append(orderbook.Bids, environment.Order{
+						Value:    price,
+						Quantity: size,
+					})
+				}
+				wrapper.orderbook.Set(market, orderbook)
+			case update, stillOpen := <-bookUpdateChannel:
+				if !stillOpen {
+					return
+				}
+
+				if currentSequence > update.Sequence {
+					continue // my snapshot is more recent than the one provided
+				}
+
+				orderbook, exists := wrapper.orderbook.Get(m)
+				if !exists {
+					continue // wait for snapshot
+				}
+
+				lastIndex := 0
+				N := len(orderbook.Asks)
+
+				for _, item := range update.Ask {
+					// replace values
+					for i := lastIndex; i < N; i++ {
+						price, _ := decimal.NewFromString(item.Price)
+						size, _ := decimal.NewFromString(item.Size)
+
+						index := sort.Search(N, func(i int) bool {
+							return orderbook.Asks[i].Value.GreaterThanOrEqual(price)
+						})
+						if price.Equals(orderbook.Asks[i].Value) {
+							// replace it
+							orderbook.Asks[i] = environment.Order{
+								Value:    price,
+								Quantity: size,
+							}
+						}
+						if index == N { // not found, append
+							orderbook.Asks = append(orderbook.Asks)
+						}
+					}
+				}
+				lastIndex = 0
+				N = len(orderbook.Bids)
+
+				for _, item := range update.Bid {
+					// replace values
+					for i := lastIndex; i < N; i++ {
+						price, _ := decimal.NewFromString(item.Price)
+						size, _ := decimal.NewFromString(item.Size)
+
+						index := sort.Search(N, func(i int) bool {
+							return orderbook.Bids[i].Value.LessThanOrEqual(price)
+						})
+						if price.Equals(orderbook.Bids[i].Value) {
+							// replace it
+							orderbook.Bids[i] = environment.Order{
+								Value:    price,
+								Quantity: size,
+							}
+						}
+						if index == N { // not found, append
+							orderbook.Asks = append(orderbook.Bids)
+						}
+					}
+				}
+
+				wrapper.orderbook.Set(market, orderbook)
+			}
+		}
+	}
+
+	summaryChannel, err := wrapper.ws.SubscribeTicker(MarketNameFor(market, wrapper))
+	if err != nil {
+		return err
+	}
+
+	bookUpdateChannel, bookSnapshotChannel, err := wrapper.ws.SubscribeOrderbook(MarketNameFor(market, wrapper))
+	if err != nil {
+		return err
+	}
+
+	go handleTicker(wrapper, summaryChannel, market)
+	go handleOrderbook(wrapper, bookSnapshotChannel, bookUpdateChannel, market)
 	return nil
 }
 
