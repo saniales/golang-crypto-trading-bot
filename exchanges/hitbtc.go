@@ -377,52 +377,55 @@ func (wrapper *HitBtcWrapperV2) subscribeFeeds(market *environment.Market) error
 					continue // wait for snapshot
 				}
 
-				lastIndex := 0
 				N := len(orderbook.Asks)
 
 				for _, item := range update.Ask {
 					// replace values
-					for i := lastIndex; i < N; i++ {
-						price, _ := decimal.NewFromString(item.Price)
-						size, _ := decimal.NewFromString(item.Size)
+					price, _ := decimal.NewFromString(item.Price)
+					size, _ := decimal.NewFromString(item.Size)
 
-						index := sort.Search(N, func(i int) bool {
-							return orderbook.Asks[i].Value.GreaterThanOrEqual(price)
-						})
-						if price.Equals(orderbook.Asks[i].Value) {
-							// replace it
-							orderbook.Asks[i] = environment.Order{
-								Value:    price,
-								Quantity: size,
-							}
+					i := sort.Search(N, func(i int) bool {
+						return orderbook.Asks[i].Value.GreaterThanOrEqual(price)
+					})
+					if size.LessThanOrEqual(decimal.Zero) { //remove it
+						orderbook.Asks = append(orderbook.Asks[:i], orderbook.Asks[i+1:]...)
+						N--
+					} else if i == N { // not found, append
+						orderbook.Asks = append(orderbook.Asks)
+						N++
+					} else if price.Equals(orderbook.Asks[i].Value) {
+						// replace it
+						orderbook.Asks[i] = environment.Order{
+							Value:    price,
+							Quantity: size,
 						}
-						if index == N { // not found, append
-							orderbook.Asks = append(orderbook.Asks)
-						}
+						N++
 					}
 				}
-				lastIndex = 0
 				N = len(orderbook.Bids)
 
 				for _, item := range update.Bid {
 					// replace values
-					for i := lastIndex; i < N; i++ {
-						price, _ := decimal.NewFromString(item.Price)
-						size, _ := decimal.NewFromString(item.Size)
+					price, _ := decimal.NewFromString(item.Price)
+					size, _ := decimal.NewFromString(item.Size)
 
-						index := sort.Search(N, func(i int) bool {
-							return orderbook.Bids[i].Value.LessThanOrEqual(price)
-						})
-						if price.Equals(orderbook.Bids[i].Value) {
-							// replace it
-							orderbook.Bids[i] = environment.Order{
-								Value:    price,
-								Quantity: size,
-							}
+					i := sort.Search(N, func(i int) bool {
+						return orderbook.Bids[i].Value.LessThanOrEqual(price)
+					})
+
+					if size.LessThanOrEqual(decimal.Zero) { //remove it
+						orderbook.Bids = append(orderbook.Bids[:i], orderbook.Bids[i+1:]...)
+						N--
+					} else if i == N { // not found, append
+						orderbook.Asks = append(orderbook.Bids)
+						N++
+					} else if price.Equals(orderbook.Bids[i].Value) {
+						// replace it
+						orderbook.Bids[i] = environment.Order{
+							Value:    price,
+							Quantity: size,
 						}
-						if index == N { // not found, append
-							orderbook.Asks = append(orderbook.Bids)
-						}
+						N++
 					}
 				}
 

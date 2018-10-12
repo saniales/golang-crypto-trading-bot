@@ -124,7 +124,6 @@ func (wrapper *ExchangeWrapperSimulator) SellMarket(market *environment.Market, 
 			gain = gain.Add(remainingAmount.Mul(ask.Value))
 			break
 		}
-		fmt.Println(ask)
 		totalQuote = totalQuote.Add(ask.Quantity)
 		gain = gain.Add(ask.Quantity.Mul(ask.Value))
 	}
