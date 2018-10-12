@@ -298,12 +298,10 @@ func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 	//     LOW	float	Daily low
 	handleTicker := func(results <-chan []float64, market *environment.Market) {
 		for {
-			fmt.Println("ENTER")
 			values, stillOpen := <-results
 			if !stillOpen {
 				return
 			}
-			fmt.Println("EXIT")
 			if len(values) == 10 { // for client bug : https://github.com/bitfinexcom/bitfinex-api-go/issues/133
 				wrapper.summaries.Set(market, &environment.MarketSummary{
 					Bid:    decimal.NewFromFloat(values[0]),
