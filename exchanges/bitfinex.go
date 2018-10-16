@@ -336,7 +336,16 @@ func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 				continue
 			}
 
+			_, exists := orderbookMap[price]
+			if !exists {
+				orderbookMap[price] = 0
+			}
 			orderbookMap[price] += amount
+
+			if orderbookMap[price] == 0 {
+				delete(orderbookMap, price)
+				continue
+			}
 
 			orderbook := environment.OrderBook{
 				Asks: make([]environment.Order, 0, 25),
@@ -349,12 +358,12 @@ func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 					orderbook.Bids = insertSort(orderbook.Bids, environment.Order{
 						Value:    decimal.NewFromFloat(price),
 						Quantity: decimal.NewFromFloat(-amount),
-					}, false)
+					}, true)
 				} else if amount > 0 {
 					orderbook.Asks = insertSort(orderbook.Asks, environment.Order{
 						Value:    decimal.NewFromFloat(price),
 						Quantity: decimal.NewFromFloat(amount),
-					}, true)
+					}, false)
 				}
 			}
 
