@@ -377,57 +377,43 @@ func (wrapper *HitBtcWrapperV2) subscribeFeeds(market *environment.Market) error
 					continue // wait for snapshot
 				}
 
-				N := len(orderbook.Asks)
+				updateBook := func(ordersToUpdate []environment.Order, newOrders []hitbtc.WSSubtypeTrade, reverseOrdering bool) []environment.Order {
+					N := len(ordersToUpdate)
 
-				for _, item := range update.Ask {
-					// replace values
-					price, _ := decimal.NewFromString(item.Price)
-					size, _ := decimal.NewFromString(item.Size)
+					for _, item := range newOrders {
+						// replace values
+						price, _ := decimal.NewFromString(item.Price)
+						size, _ := decimal.NewFromString(item.Size)
 
-					i := sort.Search(N, func(i int) bool {
-						return orderbook.Asks[i].Value.GreaterThanOrEqual(price)
-					})
-					if size.LessThanOrEqual(decimal.Zero) { //remove it
-						orderbook.Asks = append(orderbook.Asks[:i], orderbook.Asks[i+1:]...)
-						N--
-					} else if i == N { // not found, append
-						orderbook.Asks = append(orderbook.Asks)
-						N++
-					} else if price.Equals(orderbook.Asks[i].Value) {
-						// replace it
-						orderbook.Asks[i] = environment.Order{
+						newOrder := environment.Order{
 							Value:    price,
 							Quantity: size,
 						}
-						N++
-					}
-				}
-				N = len(orderbook.Bids)
 
-				for _, item := range update.Bid {
-					// replace values
-					price, _ := decimal.NewFromString(item.Price)
-					size, _ := decimal.NewFromString(item.Size)
-
-					i := sort.Search(N, func(i int) bool {
-						return orderbook.Bids[i].Value.LessThanOrEqual(price)
-					})
-
-					if size.LessThanOrEqual(decimal.Zero) { //remove it
-						orderbook.Bids = append(orderbook.Bids[:i], orderbook.Bids[i+1:]...)
-						N--
-					} else if i == N { // not found, append
-						orderbook.Asks = append(orderbook.Bids)
-						N++
-					} else if price.Equals(orderbook.Bids[i].Value) {
-						// replace it
-						orderbook.Bids[i] = environment.Order{
-							Value:    price,
-							Quantity: size,
+						i := sort.Search(N, func(i int) bool {
+							if reverseOrdering {
+								return ordersToUpdate[i].Value.LessThanOrEqual(price)
+							}
+							return ordersToUpdate[i].Value.GreaterThanOrEqual(price)
+						})
+						if size.LessThanOrEqual(decimal.Zero) { //remove it
+							ordersToUpdate = append(ordersToUpdate[:i], ordersToUpdate[i+1:]...)
+							N--
+						} else if i == N { // not found, append
+							orderbook.Asks = append(ordersToUpdate, newOrder)
+							N++
+						} else if price.Equals(ordersToUpdate[i].Value) {
+							// replace it
+							ordersToUpdate[i] = newOrder
+							N++
 						}
-						N++
 					}
+
+					return ordersToUpdate
 				}
+
+				orderbook.Asks = updateBook(orderbook.Asks, update.Ask, false)
+				orderbook.Bids = updateBook(orderbook.Bids, update.Bid, true)
 
 				wrapper.orderbook.Set(market, orderbook)
 			}
