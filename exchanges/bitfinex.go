@@ -336,16 +336,7 @@ func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 				continue
 			}
 
-			_, exists := orderbookMap[price]
-			if !exists {
-				orderbookMap[price] = 0
-			}
-			orderbookMap[price] += amount
-
-			if orderbookMap[price] == 0 {
-				delete(orderbookMap, price)
-				continue
-			}
+			orderbookMap[price] = amount
 
 			orderbook := environment.OrderBook{
 				Asks: make([]environment.Order, 0, 25),
@@ -355,15 +346,15 @@ func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 			// now let's create the cache
 			for price, amount := range orderbookMap {
 				if amount < 0 {
-					orderbook.Bids = insertSort(orderbook.Bids, environment.Order{
-						Value:    decimal.NewFromFloat(price),
-						Quantity: decimal.NewFromFloat(-amount),
-					}, true)
-				} else if amount > 0 {
 					orderbook.Asks = insertSort(orderbook.Asks, environment.Order{
 						Value:    decimal.NewFromFloat(price),
 						Quantity: decimal.NewFromFloat(amount),
 					}, false)
+				} else if amount > 0 {
+					orderbook.Bids = insertSort(orderbook.Bids, environment.Order{
+						Value:    decimal.NewFromFloat(price),
+						Quantity: decimal.NewFromFloat(-amount),
+					}, true)
 				}
 			}
 
