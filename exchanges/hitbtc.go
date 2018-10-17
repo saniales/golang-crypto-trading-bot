@@ -377,41 +377,6 @@ func (wrapper *HitBtcWrapperV2) subscribeFeeds(market *environment.Market) error
 					continue // wait for snapshot
 				}
 
-				updateBook := func(ordersToUpdate []environment.Order, newOrders []hitbtc.WSSubtypeTrade, reverseOrdering bool) []environment.Order {
-					N := len(ordersToUpdate)
-
-					for _, item := range newOrders {
-						// replace values
-						price, _ := decimal.NewFromString(item.Price)
-						size, _ := decimal.NewFromString(item.Size)
-
-						newOrder := environment.Order{
-							Value:    price,
-							Quantity: size,
-						}
-
-						i := sort.Search(N, func(i int) bool {
-							if reverseOrdering {
-								return ordersToUpdate[i].Value.LessThanOrEqual(price)
-							}
-							return ordersToUpdate[i].Value.GreaterThanOrEqual(price)
-						})
-						if size.LessThanOrEqual(decimal.Zero) { //remove it
-							ordersToUpdate = append(ordersToUpdate[:i], ordersToUpdate[i+1:]...)
-							N--
-						} else if i == N { // not found, append
-							orderbook.Asks = append(ordersToUpdate, newOrder)
-							N++
-						} else if price.Equals(ordersToUpdate[i].Value) {
-							// replace it
-							ordersToUpdate[i] = newOrder
-							N++
-						}
-					}
-
-					return ordersToUpdate
-				}
-
 				orderbook.Asks = updateBook(orderbook.Asks, update.Ask, false)
 				orderbook.Bids = updateBook(orderbook.Bids, update.Bid, true)
 
@@ -433,6 +398,55 @@ func (wrapper *HitBtcWrapperV2) subscribeFeeds(market *environment.Market) error
 	go handleTicker(wrapper, summaryChannel, market)
 	go handleOrderbook(wrapper, bookSnapshotChannel, bookUpdateChannel, market)
 	return nil
+}
+
+func updateBook(ordersToUpdate []environment.Order, newOrders []hitbtc.WSSubtypeTrade, reverseOrdering bool) []environment.Order {
+	N := len(ordersToUpdate)
+
+	for _, item := range newOrders {
+		// replace values
+		price, _ := decimal.NewFromString(item.Price)
+		size, _ := decimal.NewFromString(item.Size)
+
+		newOrder := environment.Order{
+			Value:    price,
+			Quantity: size,
+		}
+
+		i := sort.Search(N, func(i int) bool {
+			fmt.Println(i, N)
+			if reverseOrdering {
+				return ordersToUpdate[i].Value.LessThanOrEqual(price)
+			}
+			return ordersToUpdate[i].Value.GreaterThanOrEqual(price)
+		})
+		if size.Equals(decimal.Zero) { //remove it
+			if i == N-1 {
+				ordersToUpdate = ordersToUpdate[:i-1]
+				N--
+			} else { // i < N - 1
+				ordersToUpdate = append(ordersToUpdate[:i], ordersToUpdate[i+1:]...)
+				N--
+			}
+		} else if i == N { // not found, append
+			ordersToUpdate = append(ordersToUpdate, newOrder)
+			N++
+		} else if price.Equals(ordersToUpdate[i].Value) {
+			// replace it
+			ordersToUpdate[i] = newOrder
+		} else if i == 0 { // prepend it
+			ordersToUpdate = append([]environment.Order{newOrder}, ordersToUpdate...)
+			N++
+		} else { // 0 < i < N, so put new order in the middle
+			orders := ordersToUpdate[:i-1]
+			orders = append(orders, newOrder)
+			orders = append(orders, ordersToUpdate[i-1:]...)
+			ordersToUpdate = orders
+			N++
+		}
+	}
+
+	return ordersToUpdate
 }
 
 // Withdraw performs a withdraw operation from the exchange to a destination address.
