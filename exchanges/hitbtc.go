@@ -414,7 +414,6 @@ func updateBook(ordersToUpdate []environment.Order, newOrders []hitbtc.WSSubtype
 		}
 
 		i := sort.Search(N, func(i int) bool {
-			fmt.Println(i, N)
 			if reverseOrdering {
 				return ordersToUpdate[i].Value.LessThanOrEqual(price)
 			}
