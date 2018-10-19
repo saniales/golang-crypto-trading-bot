@@ -348,12 +348,12 @@ func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 				if amount < 0 {
 					orderbook.Asks = insertSort(orderbook.Asks, environment.Order{
 						Value:    decimal.NewFromFloat(price),
-						Quantity: decimal.NewFromFloat(amount),
+						Quantity: decimal.NewFromFloat(-amount),
 					}, false)
 				} else if amount > 0 {
 					orderbook.Bids = insertSort(orderbook.Bids, environment.Order{
 						Value:    decimal.NewFromFloat(price),
-						Quantity: decimal.NewFromFloat(-amount),
+						Quantity: decimal.NewFromFloat(amount),
 					}, true)
 				}
 			}
