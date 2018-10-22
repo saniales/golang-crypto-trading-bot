@@ -14,6 +14,12 @@
 			"revision": "adab96458c51a58dc1783b3335dcce5461522e75"
 		},
 		{
+			"checksumSHA1": "WcZGeCGJ1pouj9WDPqE6qVKzO1Y=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "76e4896901ef89d253d69b528d3701dd146fe2ae",
+			"revisionTime": "2018-10-12T02:01:31Z"
+		},
+		{
 			"checksumSHA1": "5LywhAkiZ0BxefKx8EnrWfID/a8=",
 			"path": "github.com/nlopes/slack",
 			"revision": "5cde21b8b96a43fc3435a1f514123d14fd7eabdc",
@@ -24,6 +30,12 @@
 			"path": "github.com/pmezard/go-difflib/difflib",
 			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
 			"revisionTime": "2016-01-10T10:55:54Z"
+		},
+		{
+			"checksumSHA1": "WK5CygdsdRZGQfSt/yY8j+Rljdk=",
+			"path": "github.com/preichenberger/go-gdax",
+			"revision": "c70877428126aa09d7c4c4be91ae4f2db4e644c9",
+			"revisionTime": "2018-09-17T14:20:32Z"
 		},
 		{
 			"checksumSHA1": "flMLuXWmjtDdpE/JKcCLFxY+3oI=",
