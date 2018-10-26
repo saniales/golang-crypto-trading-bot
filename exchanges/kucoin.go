@@ -29,7 +29,7 @@ import (
 // KucoinWrapper wrapsKucoin
 type KucoinWrapper struct {
 	api         *kucoin.Kucoin
-	ws          *kucoin.WSClient
+	ws          *websocket.WebSocket
 	websocketOn bool
 	summaries   *SummaryCache
 	orderbook   *OrderbookCache
@@ -37,7 +37,7 @@ type KucoinWrapper struct {
 
 // NewKucoinWrapper creates a generic wrapper of theKucoin
 func NewKucoinWrapper(publicKey string, secretKey string) ExchangeWrapper {
-	ws, _ := kucoin.NewWSClient()
+	ws, _ := websocket.NewWS()
 	return &KucoinWrapper{
 		api:         kucoin.New(publicKey, secretKey),
 		ws:          ws,
@@ -65,7 +65,7 @@ func (wrapper *KucoinWrapper) GetMarkets() ([]*environment.Market, error) {
 	}
 
 	wrappedMarkets := make([]*environment.Market, 0, len(KucoinMarkets))
-	for _, market := rangeKucoinMarkets {
+	for _, market := range KucoinMarkets {
 		wrappedMarkets = append(wrappedMarkets, &environment.Market{
 			Name:           market.Symbol,
 			BaseCurrency:   market.CoinType,
@@ -80,7 +80,7 @@ func (wrapper *KucoinWrapper) GetMarkets() ([]*environment.Market, error) {
 func (wrapper *KucoinWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	ret, exists := wrapper.orderbook.Get(market)
 	if !wrapper.websocketOn {
-		kucoinOrderBook, err := wrapper.api.OrdersBook(MarketNameFor(market, wrapper))
+		kucoinOrderBook, err := wrapper.api.OrdersBook(MarketNameFor(market, wrapper), 0, 0)
 
 		if err != nil {
 			return nil, err
@@ -91,16 +91,16 @@ func (wrapper *KucoinWrapper) GetOrderBook(market *environment.Market) (*environ
 			amount := order[1]
 			rate := order[0]
 			ret.Bids = append(ret.Bids, environment.Order{
-				Quantity: amount,
-				Value:    rate,
+				Quantity: decimal.NewFromFloat(amount),
+				Value:    decimal.NewFromFloat(rate),
 			})
 		}
 		for _, order := range kucoinOrderBook.SELL {
 			amount := order[1]
 			rate := order[0]
 			ret.Asks = append(ret.Asks, environment.Order{
-				Quantity: amount,
-				Value:    rate,
+				Quantity: decimal.NewFromFloat(amount),
+				Value:    decimal.NewFromFloat(rate),
 			})
 		}
 
@@ -117,8 +117,8 @@ func (wrapper *KucoinWrapper) GetOrderBook(market *environment.Market) (*environ
 
 // BuyLimit performs a limit buy action.
 func (wrapper *KucoinWrapper) BuyLimit(market *environment.Market, amount, limit float64) (string, error) {
-	orderOid, err := wrapper.api.CreateOrder(MarketNameFor(market, wrapper), "BUY", limit, amount) 
-	
+	orderOid, err := wrapper.api.CreateOrder(MarketNameFor(market, wrapper), "BUY", limit, amount)
+
 	if err != nil {
 		return "", err
 	}
@@ -133,8 +133,8 @@ func (wrapper *KucoinWrapper) BuyMarket(market *environment.Market, amount float
 
 // SellLimit performs a limit sell action.
 func (wrapper *KucoinWrapper) SellLimit(market *environment.Market, amount, limit float64) (string, error) {
-	orderOid, err := wrapper.api.CreateOrder(MarketNameFor(market, wrapper), "SELL", limit, amount) 
-	
+	orderOid, err := wrapper.api.CreateOrder(MarketNameFor(market, wrapper), "SELL", limit, amount)
+
 	if err != nil {
 		return "", err
 	}
@@ -209,10 +209,7 @@ func (wrapper *KucoinWrapper) GetBalance(symbol string) (*decimal.Decimal, error
 		return nil, errors.New("Symbol not found")
 	}
 
-	ret, err := decimal.NewFromFloat(kucoinBalance.Balance)
-	if err != nil {
-		return nil, err
-	}
+	ret := decimal.NewFromFloat(kucoinBalance.Balance)
 
 	return &ret, nil
 }
@@ -243,171 +240,20 @@ func (wrapper *KucoinWrapper) GetCandles(market *environment.Market) ([]environm
 
 // FeedConnect connects to the feed of the exchange.
 func (wrapper *KucoinWrapper) FeedConnect(markets []*environment.Market) error {
-	wrapper.websocketOn = true
-	for _, m := range markets {
-		err := wrapper.subscribeFeeds(m)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	panic("Not Implemented")
 }
 
 // subscribeFeeds subscribes to the Market Summary Feed service.
 func (wrapper *KucoinWrapper) subscribeFeeds(market *environment.Market) error {
-	handleTicker := func(wrapper *KucoinWrapper, summaryChannel <-chan kucoin.WSNotificationTickerResponse, m *environment.Market) {
-		for {
-			summary, stillOpen := <-summaryChannel
-			if !stillOpen {
-				return
-			}
-
-			high, _ := decimal.NewFromString(summary.High)
-			low, _ := decimal.NewFromString(summary.Low)
-			ask, _ := decimal.NewFromString(summary.Ask)
-			bid, _ := decimal.NewFromString(summary.Bid)
-			last, _ := decimal.NewFromString(summary.Last)
-			volume, _ := decimal.NewFromString(summary.Volume)
-
-			sum := &environment.MarketSummary{
-				High:   high,
-				Low:    low,
-				Last:   last,
-				Volume: volume,
-				Ask:    ask,
-				Bid:    bid,
-			}
-
-			wrapper.summaries.Set(m, sum)
-		}
-	}
-
-	handleOrderbook := func(wrapper *KucoinWrapper, bookSnapshotChannel <-chan kucoin.WSNotificationOrderbookSnapshot, bookUpdateChannel <-chan kucoin.WSNotificationOrderbookUpdate, m *environment.Market) {
-		var currentSequence int64
-
-		for {
-			select {
-			case snap, stillOpen := <-bookSnapshotChannel:
-				if !stillOpen {
-					return
-				}
-				if currentSequence > snap.Sequence { // my snapshot is more recent than the one provided
-					continue
-				}
-
-				orderbook := new(environment.OrderBook)
-
-				for _, item := range snap.Ask {
-					price, _ := decimal.NewFromString(item.Price)
-					size, _ := decimal.NewFromString(item.Size)
-
-					orderbook.Asks = append(orderbook.Asks, environment.Order{
-						Value:    price,
-						Quantity: size,
-					})
-				}
-				for _, item := range snap.Bid {
-					price, _ := decimal.NewFromString(item.Price)
-					size, _ := decimal.NewFromString(item.Size)
-
-					orderbook.Bids = append(orderbook.Bids, environment.Order{
-						Value:    price,
-						Quantity: size,
-					})
-				}
-				wrapper.orderbook.Set(market, orderbook)
-			case update, stillOpen := <-bookUpdateChannel:
-				if !stillOpen {
-					return
-				}
-
-				if currentSequence > update.Sequence {
-					continue // my snapshot is more recent than the one provided
-				}
-
-				orderbook, exists := wrapper.orderbook.Get(m)
-				if !exists {
-					continue // wait for snapshot
-				}
-
-				orderbook.Asks = updateBook(orderbook.Asks, update.Ask, false)
-				orderbook.Bids = updateBook(orderbook.Bids, update.Bid, true)
-
-				wrapper.orderbook.Set(market, orderbook)
-			}
-		}
-	}
-
-	summaryChannel, err := wrapper.ws.SubscribeTicker(MarketNameFor(market, wrapper))
-	if err != nil {
-		return err
-	}
-
-	bookUpdateChannel, bookSnapshotChannel, err := wrapper.ws.SubscribeOrderbook(MarketNameFor(market, wrapper))
-	if err != nil {
-		return err
-	}
-
-	go handleTicker(wrapper, summaryChannel, market)
-	go handleOrderbook(wrapper, bookSnapshotChannel, bookUpdateChannel, market)
-	return nil
-}
-
-func updateBook(ordersToUpdate []environment.Order, newOrders []kucoin.WSSubtypeTrade, reverseOrdering bool) []environment.Order {
-	N := len(ordersToUpdate)
-
-	for _, item := range newOrders {
-		// replace values
-		price, _ := decimal.NewFromString(item.Price)
-		size, _ := decimal.NewFromString(item.Size)
-
-		newOrder := environment.Order{
-			Value:    price,
-			Quantity: size,
-		}
-
-		i := sort.Search(N, func(i int) bool {
-			if reverseOrdering {
-				return ordersToUpdate[i].Value.LessThanOrEqual(price)
-			}
-			return ordersToUpdate[i].Value.GreaterThanOrEqual(price)
-		})
-		if size.Equals(decimal.Zero) { //remove it
-			if i == N-1 {
-				ordersToUpdate = ordersToUpdate[:i-1]
-				N--
-			} else { // i < N - 1
-				ordersToUpdate = append(ordersToUpdate[:i], ordersToUpdate[i+1:]...)
-				N--
-			}
-		} else if i == N { // not found, append
-			ordersToUpdate = append(ordersToUpdate, newOrder)
-			N++
-		} else if price.Equals(ordersToUpdate[i].Value) {
-			// replace it
-			ordersToUpdate[i] = newOrder
-		} else if i == 0 { // prepend it
-			ordersToUpdate = append([]environment.Order{newOrder}, ordersToUpdate...)
-			N++
-		} else { // 0 < i < N, so put new order in the middle
-			orders := ordersToUpdate[:i-1]
-			orders = append(orders, newOrder)
-			orders = append(orders, ordersToUpdate[i-1:]...)
-			ordersToUpdate = orders
-			N++
-		}
-	}
-
-	return ordersToUpdate
+	panic("Not Implemented")
 }
 
 // Withdraw performs a withdraw operation from the exchange to a destination address.
 func (wrapper *KucoinWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
-	_, err := wrapper.api.CreateWithdrawalApply(coinTicker, destinationAddress, decimal.NewFromFloat(amount))
+	_, err := wrapper.api.CreateWithdrawalApply(coinTicker, destinationAddress, amount)
 	if err != nil {
 		return err
 	}
 
-	return nil	
+	return nil
 }

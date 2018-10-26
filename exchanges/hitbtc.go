@@ -21,7 +21,6 @@ import (
 	"sort"
 
 	"github.com/juju/errors"
-
 	"github.com/saniales/go-hitbtc"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
@@ -252,7 +251,7 @@ func (wrapper *HitBtcWrapperV2) GetBalance(symbol string) (*decimal.Decimal, err
 
 	for _, hitbtcBalance := range Hitbtcbalance {
 		if hitbtcBalance.Currency == symbol {
-			ret, err := decimal.NewFromString(hitbtcBalance.Currency)
+			ret := decimal.NewFromFloat(hitbtcBalance.Available)
 			if err != nil {
 				return nil, err
 			}
