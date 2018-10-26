@@ -4,10 +4,8 @@ import (
 	"fmt"
 
 	"github.com/juju/errors"
-
-	"github.com/satori/go.uuid"
-
 	"github.com/saniales/golang-crypto-trading-bot/environment"
+	"github.com/satori/go.uuid"
 	"github.com/shopspring/decimal"
 )
 
