@@ -261,13 +261,19 @@ func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error
 		fmt.Println(err)
 	}
 
+	bookMap := make(map[string]chan []float64)
+	tickers := make(chan []float64, 25)
+
 	for _, m := range markets {
-		wrapper.subscribeFeeds(m)
+		tickerKey := MarketNameFor(m, wrapper)
+		bookMap[tickerKey] = make(chan []float64, 25)
+		wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanBook, tickerKey, bookMap[tickerKey])
+		wrapper.subscribeFeeds(m, tickers, bookMap[tickerKey]) // tickers is not used
 	}
 
 	wrapper.websocketOn = true
 
-	go func() {
+	go func(tickers chan []float64, orderbooks map[string]chan []float64) {
 		for {
 			err = wrapper.api.WebSocket.Subscribe()
 			if err != nil {
@@ -276,6 +282,11 @@ func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error
 
 			wrapper.api.WebSocket.Close()
 
+			for _, channel := range bookMap {
+				close(channel)
+			}
+
+			bookMap := make(map[string]chan []float64)
 			err = errors.New("")
 			for err != nil {
 				err = wrapper.api.WebSocket.Connect()
@@ -283,22 +294,23 @@ func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error
 					fmt.Println(err)
 				}
 			}
+			wrapper.api.WebSocket.ClearSubscriptions()
 
 			for _, m := range markets {
-				wrapper.subscribeFeeds(m)
+				tickerKey := MarketNameFor(m, wrapper)
+				bookMap[tickerKey] = make(chan []float64)
+				//wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTicker, tickerKey, tickers)
+				wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanBook, tickerKey, bookMap[tickerKey])
+				//wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTrade, tickerKey, trades)
 			}
 		}
-	}()
+	}(tickers, bookMap)
 	return nil
 }
 
 // subscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
-	tickers := make(chan []float64)
-	orderbooks := make(chan []float64)
+func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market, tickers <-chan []float64, orderbooks <-chan []float64) {
 	//trades := make(chan []float64)
-
-	tickerKey := MarketNameFor(market, wrapper)
 
 	//     NOTE: Content of result array
 	//     BID	float	Price of last highest bid
@@ -397,11 +409,6 @@ func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 
 	go handleTicker(tickers, market)
 	go handleOrderbook(orderbooks, market)
-
-	wrapper.api.WebSocket.ClearSubscriptions()
-	//wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTicker, tickerKey, tickers)
-	wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanBook, tickerKey, orderbooks)
-	//wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTrade, tickerKey, trades)
 }
 
 // Withdraw performs a withdraw operation from the exchange to a destination address.
