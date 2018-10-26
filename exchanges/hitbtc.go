@@ -189,7 +189,6 @@ func (wrapper *HitBtcWrapperV2) SellMarket(market *environment.Market, amount fl
 
 // GetTicker gets the updated ticker for a market.
 func (wrapper *HitBtcWrapperV2) GetTicker(market *environment.Market) (*environment.Ticker, error) {
-
 	hitbtcTicker, err := wrapper.api.GetTicker(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err

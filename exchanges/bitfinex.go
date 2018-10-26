@@ -258,7 +258,7 @@ func (wrapper *BitfinexWrapper) CalculateWithdrawFees(market *environment.Market
 func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error {
 	err := wrapper.api.WebSocket.Connect()
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
 
 	for _, m := range markets {
@@ -268,12 +268,27 @@ func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error
 	wrapper.websocketOn = true
 
 	go func() {
-		err := wrapper.api.WebSocket.Subscribe()
-		if err != nil {
-			fmt.Println(err)
+		for {
+			err = wrapper.api.WebSocket.Subscribe()
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			wrapper.api.WebSocket.Close()
+
+			err = errors.New("")
+			for err != nil {
+				err = wrapper.api.WebSocket.Connect()
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+
+			for _, m := range markets {
+				wrapper.subscribeFeeds(m)
+			}
 		}
 	}()
-
 	return nil
 }
 
@@ -383,6 +398,7 @@ func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market) {
 	go handleTicker(tickers, market)
 	go handleOrderbook(orderbooks, market)
 
+	wrapper.api.WebSocket.ClearSubscriptions()
 	//wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTicker, tickerKey, tickers)
 	wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanBook, tickerKey, orderbooks)
 	//wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTrade, tickerKey, trades)
