@@ -449,5 +449,9 @@ func updateBook(ordersToUpdate []environment.Order, newOrders []hitbtc.WSSubtype
 
 // Withdraw performs a withdraw operation from the exchange to a destination address.
 func (wrapper *HitBtcWrapperV2) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
-	panic("Not Implemented")
+	_, err := wrapper.api.Withdraw(destinationAddress, coinTicker, amount)
+	if err != nil {
+		return err
+	}
+	return nil
 }
