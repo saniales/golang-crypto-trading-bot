@@ -159,6 +159,11 @@ func (wrapper *ExchangeWrapperSimulator) GetBalance(symbol string) (*decimal.Dec
 	return &bal, nil
 }
 
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *ExchangeWrapperSimulator) GetDepositAddress(coinTicker string) (string, bool) {
+	return "", false
+}
+
 // FeedConnect connects to the feed of the exchange.
 func (wrapper *ExchangeWrapperSimulator) FeedConnect(markets []*environment.Market) error {
 	return wrapper.innerWrapper.FeedConnect(markets)

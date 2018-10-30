@@ -20,16 +20,18 @@ type BitfinexWrapper struct {
 	unsubscribeChannels map[string]chan bool
 	summaries           *SummaryCache
 	orderbook           *OrderbookCache
+	depositAddresses    map[string]string
 }
 
 // NewBitfinexWrapper creates a generic wrapper of the bittrex API.
-func NewBitfinexWrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewBitfinexWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	return &BitfinexWrapper{
 		api:                 bitfinex.NewClient().Auth(publicKey, secretKey),
 		unsubscribeChannels: make(map[string]chan bool),
 		summaries:           NewSummaryCache(),
 		orderbook:           NewOrderbookCache(),
 		websocketOn:         false,
+		depositAddresses:    depositAddresses,
 	}
 }
 
@@ -231,6 +233,12 @@ func (wrapper *BitfinexWrapper) GetBalance(symbol string) (*decimal.Decimal, err
 	}
 
 	return nil, errors.New("Symbol not found")
+}
+
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *BitfinexWrapper) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.

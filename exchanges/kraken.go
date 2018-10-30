@@ -30,19 +30,21 @@ import (
 
 // KrakenWrapper provides a Generic wrapper of the Kraken API.
 type KrakenWrapper struct {
-	api         *krakenapi.KrakenApi
-	summaries   *SummaryCache
-	candles     *CandlesCache
-	websocketOn bool
+	api              *krakenapi.KrakenApi
+	summaries        *SummaryCache
+	candles          *CandlesCache
+	depositAddresses map[string]string
+	websocketOn      bool
 }
 
 // NewKrakenWrapper creates a generic wrapper of the poloniex API.
-func NewKrakenWrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewKrakenWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	return &KrakenWrapper{
-		api:         krakenapi.New(publicKey, secretKey),
-		summaries:   NewSummaryCache(),
-		candles:     NewCandlesCache(),
-		websocketOn: false,
+		api:              krakenapi.New(publicKey, secretKey),
+		summaries:        NewSummaryCache(),
+		candles:          NewCandlesCache(),
+		depositAddresses: depositAddresses,
+		websocketOn:      false,
 	}
 }
 
@@ -270,6 +272,12 @@ func (wrapper *KrakenWrapper) GetBalance(symbol string) (*decimal.Decimal, error
 	}
 
 	panic("Help me integrate this feature!")
+}
+
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *KrakenWrapper) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.

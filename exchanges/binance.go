@@ -29,22 +29,24 @@ import (
 
 // BinanceWrapper represents the wrapper for the Binance exchange.
 type BinanceWrapper struct {
-	api         *binance.Client
-	summaries   *SummaryCache
-	candles     *CandlesCache
-	orderbook   *OrderbookCache
-	websocketOn bool
+	api              *binance.Client
+	summaries        *SummaryCache
+	candles          *CandlesCache
+	orderbook        *OrderbookCache
+	depositAddresses map[string]string
+	websocketOn      bool
 }
 
 // NewBinanceWrapper creates a generic wrapper of the binance API.
-func NewBinanceWrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewBinanceWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	client := binance.NewClient(publicKey, secretKey)
 	return &BinanceWrapper{
-		api:         client,
-		summaries:   NewSummaryCache(),
-		candles:     NewCandlesCache(),
-		orderbook:   NewOrderbookCache(),
-		websocketOn: false,
+		api:              client,
+		summaries:        NewSummaryCache(),
+		candles:          NewCandlesCache(),
+		orderbook:        NewOrderbookCache(),
+		depositAddresses: depositAddresses,
+		websocketOn:      false,
 	}
 }
 
@@ -276,6 +278,12 @@ func (wrapper *BinanceWrapper) GetBalance(symbol string) (*decimal.Decimal, erro
 	}
 
 	return nil, errors.New("Symbol not found")
+}
+
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *BinanceWrapper) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
