@@ -5,17 +5,18 @@
 [![GitHub release](https://img.shields.io/github/release/saniales/golang-crypto-trading-bot.svg)](https://github.com/saniales/golang-crypto-trading-bot/releases)
 [![license](https://img.shields.io/github/license/saniales/golang-crypto-trading-bot.svg?maxAge=2592000)](https://github.com/saniales/golang-crypto-trading-bot/LICENSE)
 
-
-A golang implementation of a console-based trading bot for cryptocurrency exchanges. 
+A golang implementation of a console-based trading bot for cryptocurrency exchanges.
 
 ## Usage
 
 Download a release or directly build the code from this repository.
+
 ``` bash
-$ go get github.com/saniales/golang-crypto-trading-bot
+go get github.com/saniales/golang-crypto-trading-bot
 ```
 
 If you need to, you can create a strategy and bind it to the bot:
+
 ``` go
 import bot "github.com/saniales/golang-crypto-trading-bot/cmd"
 
@@ -37,13 +38,16 @@ A Fake balance for each coin must be specified for each exchange if simulation m
 
 | Exchange Name | REST Supported    | Websocket Support |
 | ------------- |------------------ | ----------------- |
-| Bittrex       | Yes  	            | No                |   	
-| Poloniex      | Yes  	            | Yes  	            |
-| Kraken        | Yes (no withdraw) | No   	            |
-| Bitfinex      | Yes  	            | Yes  	            |
-| Binance       | Yes  	            | Yes  	            |
+| Bittrex       | Yes               | No                |
+| Poloniex      | Yes               | Yes               |
+| Kraken        | Yes (no withdraw) | No                |
+| Bitfinex      | Yes               | Yes               |
+| Binance       | Yes               | Yes               |
+| Kucoin        | Yes               | No                |
+| HitBtc        | Yes               | Yes               |
 
-# Configuration file template
+## Configuration file template
+
 Create a configuration file from this example or run the `init` command of the compiled executable.
 
 ``` yaml
@@ -96,13 +100,14 @@ strategies:
           market_name: ETCBTC
 ```
 
-# Donate
+## Donate
+
 Feel free to donate:
 
-| METHOD 	| ADDRESS                                   	|
-|--------	|--------------------------------------------	|
-| Paypal 	| https://paypal.me/AlessandroSanino         	|
-| BTC    	| 1DVgmv6jkUiGrnuEv1swdGRyhQsZjX9MT3         	|
-| XVG    	| DFstPiWFXjX8UCyUCxfeVpk6JkgaLBSNvS         	|
-| ETH    	| 0x2fe7bd8a41e91e9284aada0055dbb15ecececf02 	|
-| USDT   	| 18obCEVmbT6MHXDcPoFwnUuCmkttLbK5Xo         	|
+| METHOD  | ADDRESS                                     |
+|-------- |-------------------------------------------- |
+| Paypal  | https://paypal.me/AlessandroSanino          |
+| BTC     | 1DVgmv6jkUiGrnuEv1swdGRyhQsZjX9MT3          |
+| XVG     | DFstPiWFXjX8UCyUCxfeVpk6JkgaLBSNvS          |
+| ETH     | 0x2fe7bd8a41e91e9284aada0055dbb15ecececf02  |
+| USDT    | 18obCEVmbT6MHXDcPoFwnUuCmkttLbK5Xo          |
