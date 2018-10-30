@@ -20,8 +20,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dgrr/kucoin-go"
-	"github.com/dgrr/kucoin-go/websocket"
+	"github.com/fiore/kucoin-go"
+	"github.com/fiore/kucoin-go/websocket"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
 )
@@ -80,7 +80,7 @@ func (wrapper *KucoinWrapper) GetMarkets() ([]*environment.Market, error) {
 func (wrapper *KucoinWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	ret, exists := wrapper.orderbook.Get(market)
 	if !wrapper.websocketOn {
-		kucoinOrderBook, err := wrapper.api.OrdersBook(MarketNameFor(market, wrapper), 0, 0)
+		kucoinOrderBook, err := wrapper.api.OrdersBook(MarketNameFor(market, wrapper), 0, 0, "")
 
 		if err != nil {
 			return nil, err
