@@ -48,6 +48,7 @@ type ExchangeWrapper interface {
 	CalculateWithdrawFees(market *environment.Market, amount float64) float64                                    // Calculates the withdrawal fees on a specified market.
 
 	GetBalance(symbol string) (*decimal.Decimal, error) // Gets the balance of the user of the specified currency.
+	GetDepositAddress(coinTicker string) (string, bool) // Gets the deposit address for the specified coin on the exchange, if exists.
 
 	FeedConnect(markets []*environment.Market) error // Connects to the feed of the exchange.
 

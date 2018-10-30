@@ -29,22 +29,24 @@ import (
 
 // HitBtcWrapperV2 wraps HitBtc API v2.0
 type HitBtcWrapperV2 struct {
-	api         *hitbtc.HitBtc
-	ws          *hitbtc.WSClient
-	websocketOn bool
-	summaries   *SummaryCache
-	orderbook   *OrderbookCache
+	api              *hitbtc.HitBtc
+	ws               *hitbtc.WSClient
+	websocketOn      bool
+	summaries        *SummaryCache
+	orderbook        *OrderbookCache
+	depositAddresses map[string]string
 }
 
 // NewHitBtcV2Wrapper creates a generic wrapper of the HitBtc API v2.0.
-func NewHitBtcV2Wrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewHitBtcV2Wrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	ws, _ := hitbtc.NewWSClient()
 	return &HitBtcWrapperV2{
-		api:         hitbtc.New(publicKey, secretKey),
-		ws:          ws,
-		websocketOn: false,
-		summaries:   NewSummaryCache(),
-		orderbook:   NewOrderbookCache(),
+		api:              hitbtc.New(publicKey, secretKey),
+		ws:               ws,
+		websocketOn:      false,
+		summaries:        NewSummaryCache(),
+		orderbook:        NewOrderbookCache(),
+		depositAddresses: depositAddresses,
 	}
 }
 
@@ -260,6 +262,12 @@ func (wrapper *HitBtcWrapperV2) GetBalance(symbol string) (*decimal.Decimal, err
 	}
 
 	return nil, errors.New("Symbol not found")
+}
+
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *HitBtcWrapperV2) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
