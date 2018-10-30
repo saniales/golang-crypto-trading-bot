@@ -28,15 +28,16 @@ import (
 
 // KucoinWrapper wrapsKucoin
 type KucoinWrapper struct {
-	api         *kucoin.Kucoin
-	ws          *websocket.WebSocket
-	websocketOn bool
-	summaries   *SummaryCache
-	orderbook   *OrderbookCache
+	api              *kucoin.Kucoin
+	ws               *websocket.WebSocket
+	websocketOn      bool
+	summaries        *SummaryCache
+	orderbook        *OrderbookCache
+	depositAddresses map[string]string
 }
 
 // NewKucoinWrapper creates a generic wrapper of theKucoin
-func NewKucoinWrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewKucoinWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	ws, _ := websocket.NewWS()
 	return &KucoinWrapper{
 		api:         kucoin.New(publicKey, secretKey),
@@ -44,6 +45,7 @@ func NewKucoinWrapper(publicKey string, secretKey string) ExchangeWrapper {
 		websocketOn: false,
 		summaries:   NewSummaryCache(),
 		orderbook:   NewOrderbookCache(),
+		depositAddresses: depositAddresses,
 	}
 }
 
@@ -212,6 +214,12 @@ func (wrapper *KucoinWrapper) GetBalance(symbol string) (*decimal.Decimal, error
 	ret := decimal.NewFromFloat(kucoinBalance.Balance)
 
 	return &ret, nil
+}
+
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *KucoinWrapper) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
