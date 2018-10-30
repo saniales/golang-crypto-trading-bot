@@ -26,6 +26,8 @@ func InitExchange(exchangeConfig environment.ExchangeConfig, simulatedMode bool,
 		exch = exchanges.NewBitfinexWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey, depositAddresses)
 	case "hitbtc":
 		exch = exchanges.NewHitBtcV2Wrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey, depositAddresses)
+	case "kucoin":
+		exch = exchanges.NewKucoinWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey, depositAddresses)
 	default:
 		return nil
 	}
