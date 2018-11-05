@@ -220,13 +220,12 @@ func (wrapper *KrakenWrapper) GetCandles(market *environment.Market) ([]environm
 		step := time.Minute * 30
 		start := time.Unix(krakenTrades.Trades[0].Time, 0)
 
-		open := decimal.NewFromFloat(krakenTrades.Trades[0].PriceFloat)
-		high := open
-		low := open
-		close := open
+		var open = decimal.NewFromFloat(krakenTrades.Trades[0].PriceFloat)
+		var high = open
+		var low = open
+		var close decimal.Decimal
 
 		N := len(trades)
-
 		for i := 1; i < N; i++ {
 			currentTrade := trades[i]
 			candleTime := time.Unix(currentTrade.Time, 0)

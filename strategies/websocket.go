@@ -35,7 +35,7 @@ func (wss WebsocketStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets
 	hasUpdateFunc := wss.Model.OnUpdate != nil
 	hasErrorFunc := wss.Model.OnError != nil
 
-	// update is handled by the developer externally, here we just checked for existance.
+	// update is handled by the developer externally, here we just checked for existence.
 	if !hasUpdateFunc {
 		_err := errors.New("OnUpdate func cannot be empty")
 		if hasErrorFunc {

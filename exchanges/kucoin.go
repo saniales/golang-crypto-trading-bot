@@ -40,11 +40,11 @@ type KucoinWrapper struct {
 func NewKucoinWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	ws, _ := websocket.NewWS()
 	return &KucoinWrapper{
-		api:         kucoin.New(publicKey, secretKey),
-		ws:          ws,
-		websocketOn: false,
-		summaries:   NewSummaryCache(),
-		orderbook:   NewOrderbookCache(),
+		api:              kucoin.New(publicKey, secretKey),
+		ws:               ws,
+		websocketOn:      false,
+		summaries:        NewSummaryCache(),
+		orderbook:        NewOrderbookCache(),
 		depositAddresses: depositAddresses,
 	}
 }
