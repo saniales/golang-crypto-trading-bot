@@ -1,5 +1,6 @@
 # golang-crypto-trading-bot
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/saniales/golang-crypto-trading-bot)](https://goreportcard.com/report/github.com/saniales/golang-crypto-trading-bot)
 [![GoDoc](https://godoc.org/github.com/saniales/golang-crypto-trading-bot?status.svg)](https://godoc.org/github.com/saniales/golang-crypto-trading-bot)
 [![Travis CI](https://img.shields.io/travis/saniales/golang-crypto-trading-bot.svg)]((https://travis-ci.org/saniales/golang-crypto-trading-bot))
 [![GitHub release](https://img.shields.io/github/release/saniales/golang-crypto-trading-bot.svg)](https://github.com/saniales/golang-crypto-trading-bot/releases)
