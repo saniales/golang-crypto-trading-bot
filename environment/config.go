@@ -15,14 +15,19 @@
 
 package environment
 
+import (
+	"github.com/shopspring/decimal"
+)
+
 // ExchangeConfig Represents a configuration for an API Connection to an exchange.
 //
 //     Can be used to generate an ExchangeWrapper.
 type ExchangeConfig struct {
-	ExchangeName     string `yaml:"exchange"`          // Represents the exchange name.
-	PublicKey        string `yaml:"public_key"`        // Represents the public key used to connect to Exchange API.
-	SecretKey        string `yaml:"secret_key"`        // Represents the secret key used to connect to Exchange API.
-	WebsocketEnabled bool   `yaml:"websocket_enabled"` // Represents whether websocket communication is enabled for this exchange configuration or REST API is involved.
+	ExchangeName     string                     `yaml:"exchange"`          // Represents the exchange name.
+	PublicKey        string                     `yaml:"public_key"`        // Represents the public key used to connect to Exchange API.
+	SecretKey        string                     `yaml:"secret_key"`        // Represents the secret key used to connect to Exchange API.
+	DepositAddresses map[string]string          `yaml:"deposit_addresses"` // Represents the bindings between coins and deposit address on the exchange.
+	FakeBalances     map[string]decimal.Decimal `yaml:"fake_balances"`     // Used only in simulation mode, fake starting balance [coin:balance].
 }
 
 // StrategyConfig contains where a strategy will be applied in the specified exchange.
@@ -45,6 +50,7 @@ type ExchangeBindingsConfig struct {
 
 // BotConfig contains all config data of the bot, which can be also loaded from config file.
 type BotConfig struct {
-	ExchangeConfigs []ExchangeConfig `yaml:"exchange_configs"` // Represents the current exchange configuration.
-	Strategies      []StrategyConfig `yaml:"strategies"`       // Represents the current strategies adopted by the bot.
+	SimulationModeOn bool             `yaml:"simulation_mode"`  // if true, do not create real orders and do not get real balance
+	ExchangeConfigs  []ExchangeConfig `yaml:"exchange_configs"` // Represents the current exchange configuration.
+	Strategies       []StrategyConfig `yaml:"strategies"`       // Represents the current strategies adopted by the bot.
 }

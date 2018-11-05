@@ -24,24 +24,29 @@ import (
 	"github.com/adshao/go-binance"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 )
 
 // BinanceWrapper represents the wrapper for the Binance exchange.
 type BinanceWrapper struct {
-	api         *binance.Client
-	summaries   *SummaryCache
-	candles     *CandlesCache
-	websocketOn bool
+	api              *binance.Client
+	summaries        *SummaryCache
+	candles          *CandlesCache
+	orderbook        *OrderbookCache
+	depositAddresses map[string]string
+	websocketOn      bool
 }
 
 // NewBinanceWrapper creates a generic wrapper of the binance API.
-func NewBinanceWrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewBinanceWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	client := binance.NewClient(publicKey, secretKey)
 	return &BinanceWrapper{
-		api:         client,
-		summaries:   NewSummaryCache(),
-		candles:     NewCandlesCache(),
-		websocketOn: false,
+		api:              client,
+		summaries:        NewSummaryCache(),
+		candles:          NewCandlesCache(),
+		orderbook:        NewOrderbookCache(),
+		depositAddresses: depositAddresses,
+		websocketOn:      false,
 	}
 }
 
@@ -82,39 +87,67 @@ func (wrapper *BinanceWrapper) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper *BinanceWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
-	binanceOrderBook, err := wrapper.api.NewListOrdersService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
+	if !wrapper.websocketOn {
+		orderbook, _, err := wrapper.orderbookFromREST(market)
+		if err != nil {
+			return nil, err
+		}
+
+		wrapper.orderbook.Set(market, orderbook)
+		return orderbook, nil
+	}
+
+	orderbook, exists := wrapper.orderbook.Get(market)
+	if !exists {
+		return nil, errors.New("Orderbook not loaded")
+	}
+
+	return orderbook, nil
+}
+
+func (wrapper *BinanceWrapper) orderbookFromREST(market *environment.Market) (*environment.OrderBook, int64, error) {
+	binanceOrderBook, err := wrapper.api.NewDepthService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 
 	var orderBook environment.OrderBook
-	for _, order := range binanceOrderBook {
-		qty, err := decimal.NewFromString(order.ExecutedQuantity)
+
+	for _, ask := range binanceOrderBook.Asks {
+		qty, err := decimal.NewFromString(ask.Quantity)
 		if err != nil {
-			return nil, err
+			return nil, -1, err
 		}
 
-		value, err := decimal.NewFromString(order.Price)
+		value, err := decimal.NewFromString(ask.Price)
 		if err != nil {
-			return nil, err
+			return nil, -1, err
 		}
 
-		if order.Type == "ASK" {
-			orderBook.Asks = append(orderBook.Asks, environment.Order{
-				Quantity:  qty,
-				Value:     value,
-				Timestamp: time.Unix(order.Time, 0),
-			})
-		} else if order.Type == "BID" {
-			orderBook.Bids = append(orderBook.Bids, environment.Order{
-				Quantity:  qty,
-				Value:     value,
-				Timestamp: time.Unix(order.Time, 0),
-			})
-		}
+		orderBook.Asks = append(orderBook.Asks, environment.Order{
+			Quantity: qty,
+			Value:    value,
+		})
 	}
 
-	return &orderBook, nil
+	for _, bid := range binanceOrderBook.Bids {
+		qty, err := decimal.NewFromString(bid.Quantity)
+		if err != nil {
+			return nil, -1, err
+		}
+
+		value, err := decimal.NewFromString(bid.Price)
+		if err != nil {
+			return nil, -1, err
+		}
+
+		orderBook.Bids = append(orderBook.Asks, environment.Order{
+			Quantity: qty,
+			Value:    value,
+		})
+	}
+
+	return &orderBook, binanceOrderBook.LastUpdateID, nil
 }
 
 // BuyLimit performs a limit buy action.
@@ -161,22 +194,9 @@ func (wrapper *BinanceWrapper) GetTicker(market *environment.Market) (*environme
 // GetMarketSummary gets the current market summary.
 func (wrapper *BinanceWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	if !wrapper.websocketOn {
-		hilo, err := wrapper.api.NewListPriceChangeStatsService().Do(context.Background())
+		binanceSummary, err := wrapper.api.NewPriceChangeStatsService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 		if err != nil {
 			return nil, err
-		}
-
-		var binanceSummary *binance.PriceChangeStats
-
-		for _, val := range hilo {
-			if val.Symbol == MarketNameFor(market, wrapper) {
-				binanceSummary = val
-				break
-			}
-		}
-
-		if binanceSummary == nil {
-			return nil, errors.New("Symbol not found")
 		}
 
 		ask, _ := decimal.NewFromString(binanceSummary.AskPrice)
@@ -260,6 +280,12 @@ func (wrapper *BinanceWrapper) GetBalance(symbol string) (*decimal.Decimal, erro
 	return nil, errors.New("Symbol not found")
 }
 
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *BinanceWrapper) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Binance fees are currently hardcoded.
@@ -288,6 +314,7 @@ func (wrapper *BinanceWrapper) FeedConnect(markets []*environment.Market) error 
 		if err != nil {
 			return err
 		}
+		wrapper.subscribeOrderbookFeed(m)
 	}
 	wrapper.websocketOn = true
 
@@ -316,5 +343,69 @@ func (wrapper *BinanceWrapper) subscribeMarketSummaryFeed(market *environment.Ma
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market) {
+	go func() {
+		for {
+			_, lastUpdateID, err := wrapper.orderbookFromREST(market)
+			if err != nil {
+				logrus.Error(err)
+				return
+			}
+			// 24 hours max
+			currentUpdateID := lastUpdateID
+			logrus.Info(time.Now())
+			done, _, err := binance.WsPartialDepthServe(MarketNameFor(market, wrapper), "20", func(event *binance.WsPartialDepthEvent) {
+				if event.LastUpdateID <= currentUpdateID { // this update is more recent than the latest fetched
+					return
+				}
+
+				logrus.Info(time.Now())
+
+				var orderbook environment.OrderBook
+
+				orderbook.Asks = make([]environment.Order, len(event.Asks))
+				orderbook.Bids = make([]environment.Order, len(event.Bids))
+
+				for i, ask := range event.Asks {
+					price, _ := decimal.NewFromString(ask.Price)
+					quantity, _ := decimal.NewFromString(ask.Quantity)
+					newOrder := environment.Order{
+						Value:    price,
+						Quantity: quantity,
+					}
+					orderbook.Asks[i] = newOrder
+				}
+
+				for i, bid := range event.Bids {
+					price, _ := decimal.NewFromString(bid.Price)
+					quantity, _ := decimal.NewFromString(bid.Quantity)
+					newOrder := environment.Order{
+						Value:    price,
+						Quantity: quantity,
+					}
+					orderbook.Bids[i] = newOrder
+				}
+
+				logrus.Infof("%s : %s", MarketNameFor(market, wrapper), orderbook)
+				wrapper.orderbook.Set(market, &orderbook)
+			}, func(err error) {
+				logrus.Error(err)
+			})
+
+			<-done
+		}
+	}()
+}
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *BinanceWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	err := wrapper.api.NewCreateWithdrawService().Address(destinationAddress).Asset(coinTicker).Amount(fmt.Sprint(amount)).Do(context.Background())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

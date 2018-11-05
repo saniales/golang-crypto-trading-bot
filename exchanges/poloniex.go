@@ -28,21 +28,23 @@ import (
 
 // PoloniexWrapper provides a Generic wrapper of the Poloniex API.
 type PoloniexWrapper struct {
-	api           *poloniex.Poloniex // access to Poloniex API
-	bindedTickers map[string]bool    // if true, i am subscribing to market ticker.
-	summaries     *SummaryCache
-	candles       *CandlesCache
-	websocketOn   bool
+	api              *poloniex.Poloniex // access to Poloniex API
+	bindedTickers    map[string]bool    // if true, i am subscribing to market ticker.
+	summaries        *SummaryCache
+	candles          *CandlesCache
+	depositAddresses map[string]string
+	websocketOn      bool
 }
 
 // NewPoloniexWrapper creates a generic wrapper of the poloniex API.
-func NewPoloniexWrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewPoloniexWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	return &PoloniexWrapper{
-		api:           poloniex.NewWithCredentials(publicKey, secretKey),
-		bindedTickers: make(map[string]bool),
-		summaries:     NewSummaryCache(),
-		candles:       NewCandlesCache(),
-		websocketOn:   false,
+		api:              poloniex.NewWithCredentials(publicKey, secretKey),
+		bindedTickers:    make(map[string]bool),
+		summaries:        NewSummaryCache(),
+		candles:          NewCandlesCache(),
+		depositAddresses: depositAddresses,
+		websocketOn:      false,
 	}
 }
 
@@ -216,6 +218,12 @@ func (wrapper *PoloniexWrapper) GetBalance(symbol string) (*decimal.Decimal, err
 	return nil, errors.New("Symbol not found")
 }
 
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *PoloniexWrapper) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Binance fees are currently hardcoded.
@@ -281,4 +289,14 @@ func (wrapper *PoloniexWrapper) subscribeMarketSummaryFeed(market *environment.M
 			})
 		}
 	}
+}
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *PoloniexWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	_, err := wrapper.api.Withdraw(coinTicker, amount, destinationAddress)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

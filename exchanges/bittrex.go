@@ -34,29 +34,31 @@ type BittrexWrapper struct {
 	candles             *CandlesCache
 	websocketOn         bool
 	unsubscribeChannels map[*environment.Market]chan bool
+	depositAddresses    map[string]string
 }
 
 // NewBittrexWrapper creates a generic wrapper of the bittrex API.
-func NewBittrexWrapper(publicKey string, secretKey string) ExchangeWrapper {
-	return BittrexWrapper{
-		api:         api.New(publicKey, secretKey),
-		websocketOn: false,
-		summaries:   NewSummaryCache(),
-		candles:     NewCandlesCache(),
+func NewBittrexWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
+	return &BittrexWrapper{
+		api:              api.New(publicKey, secretKey),
+		websocketOn:      false,
+		summaries:        NewSummaryCache(),
+		candles:          NewCandlesCache(),
+		depositAddresses: depositAddresses,
 	}
 }
 
 // Name returns the name of the wrapped exchange.
-func (wrapper BittrexWrapper) Name() string {
+func (wrapper *BittrexWrapper) Name() string {
 	return "bittrex"
 }
 
-func (wrapper BittrexWrapper) String() string {
+func (wrapper *BittrexWrapper) String() string {
 	return wrapper.Name()
 }
 
 // GetMarkets gets all the markets info.
-func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
+func (wrapper *BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 	bittrexMarkets, err := wrapper.api.GetMarkets()
 	if err != nil {
 		return nil, err
@@ -75,7 +77,7 @@ func (wrapper BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
+func (wrapper *BittrexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	bittrexOrderBook, err := wrapper.api.GetOrderBook(MarketNameFor(market, wrapper), "both")
 	if err != nil {
 		return nil, err
@@ -95,33 +97,33 @@ func (wrapper BittrexWrapper) GetOrderBook(market *environment.Market) (*environ
 		})
 	}
 
-	return nil, nil
+	return &orderBook, nil
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper BittrexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper *BittrexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.BuyLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
 
 // SellLimit performs a limit sell action.
-func (wrapper BittrexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper *BittrexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.SellLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
 	return orderNumber, err
 }
 
 // BuyMarket performs a market buy action.
-func (wrapper BittrexWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
+func (wrapper *BittrexWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
 	panic("Not supported on bittrex")
 }
 
 // SellMarket performs a market sell action.
-func (wrapper BittrexWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
+func (wrapper *BittrexWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
 	panic("Not supported on bittrex")
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
+func (wrapper *BittrexWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	bittrexTicker, err := wrapper.api.GetTicker(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err
@@ -135,7 +137,7 @@ func (wrapper BittrexWrapper) GetTicker(market *environment.Market) (*environmen
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper BittrexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
+func (wrapper *BittrexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	if !wrapper.websocketOn {
 		summaryArray, err := wrapper.api.GetMarketSummary(MarketNameFor(market, wrapper))
 		if err != nil {
@@ -172,12 +174,12 @@ func convertFromBittrexCandle(candle api.Candle) environment.CandleStick {
 }
 
 // GetCandles gets the candle data from the exchange.
-func (wrapper BittrexWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+func (wrapper *BittrexWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
 	panic("Not supported in Bittrex V1")
 }
 
 // GetBalance gets the balance of the user of the specified currency.
-func (wrapper BittrexWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
+func (wrapper *BittrexWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
 	balance, err := wrapper.api.GetBalance(symbol)
 	if err != nil {
 		return nil, err
@@ -186,10 +188,16 @@ func (wrapper BittrexWrapper) GetBalance(symbol string) (*decimal.Decimal, error
 	return &balance.Available, nil
 }
 
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *BittrexWrapper) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Bittrex fees are hardcoded due to the inability to obtain them via API before placing an order.
-func (wrapper BittrexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+func (wrapper *BittrexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {
 		feePercentage = 0.0025
@@ -203,12 +211,12 @@ func (wrapper BittrexWrapper) CalculateTradingFees(market *environment.Market, a
 }
 
 // CalculateWithdrawFees calculates the withdrawal fees on a specified market.
-func (wrapper BittrexWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+func (wrapper *BittrexWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
 	panic("Not Implemented")
 }
 
 // FeedConnect connects to the feed of the exchange.
-func (wrapper BittrexWrapper) FeedConnect(markets []*environment.Market) error {
+func (wrapper *BittrexWrapper) FeedConnect(markets []*environment.Market) error {
 	return ErrWebsocketNotSupported
 
 	wrapper.websocketOn = true
@@ -222,8 +230,8 @@ func (wrapper BittrexWrapper) FeedConnect(markets []*environment.Market) error {
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 //
-//     NOTE: Not supported on Bittrex v1 API, use BittrexWrapperV2.
-func (wrapper BittrexWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
+//     NOTE: Not supported on Bittrex v1 API, use *BittrexWrapperV2.
+func (wrapper *BittrexWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
 	results := make(chan api.ExchangeState)
 
 	wrapper.api.SubscribeExchangeUpdate(MarketNameFor(market, wrapper), results, wrapper.unsubscribeChannels[market])
@@ -239,4 +247,13 @@ func (wrapper BittrexWrapper) subscribeMarketSummaryFeed(market *environment.Mar
 			}
 		}
 	}(market, results)
+}
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *BittrexWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	_, err := wrapper.api.Withdraw(destinationAddress, coinTicker, decimal.NewFromFloat(amount))
+	if err != nil {
+		return err
+	}
+	return nil
 }

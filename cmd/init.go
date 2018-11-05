@@ -66,7 +66,7 @@ func initConfig() {
 			fmt.Println()
 			return
 		}
-		err = ioutil.WriteFile("./.gobot", content, 0666)
+		err = ioutil.WriteFile("./.bot_config.yml", content, 0666)
 		if err != nil {
 			fmt.Print("Cannot write new configuration file")
 			if GlobalFlags.Verbose > 0 {

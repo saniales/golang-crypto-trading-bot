@@ -30,33 +30,35 @@ import (
 
 // KrakenWrapper provides a Generic wrapper of the Kraken API.
 type KrakenWrapper struct {
-	api         *krakenapi.KrakenApi
-	summaries   *SummaryCache
-	candles     *CandlesCache
-	websocketOn bool
+	api              *krakenapi.KrakenApi
+	summaries        *SummaryCache
+	candles          *CandlesCache
+	depositAddresses map[string]string
+	websocketOn      bool
 }
 
 // NewKrakenWrapper creates a generic wrapper of the poloniex API.
-func NewKrakenWrapper(publicKey string, secretKey string) ExchangeWrapper {
-	return KrakenWrapper{
-		api:         krakenapi.New(publicKey, secretKey),
-		summaries:   NewSummaryCache(),
-		candles:     NewCandlesCache(),
-		websocketOn: false,
+func NewKrakenWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
+	return &KrakenWrapper{
+		api:              krakenapi.New(publicKey, secretKey),
+		summaries:        NewSummaryCache(),
+		candles:          NewCandlesCache(),
+		depositAddresses: depositAddresses,
+		websocketOn:      false,
 	}
 }
 
 // Name returns the name of the wrapped exchange.
-func (wrapper KrakenWrapper) Name() string {
+func (wrapper *KrakenWrapper) Name() string {
 	return "kraken"
 }
 
-func (wrapper KrakenWrapper) String() string {
+func (wrapper *KrakenWrapper) String() string {
 	return wrapper.Name()
 }
 
 // GetMarkets gets all the markets info.
-func (wrapper KrakenWrapper) GetMarkets() ([]*environment.Market, error) {
+func (wrapper *KrakenWrapper) GetMarkets() ([]*environment.Market, error) {
 	krakenMarkets, err := wrapper.api.AssetPairs()
 	if err != nil {
 		return nil, err
@@ -80,7 +82,7 @@ func (wrapper KrakenWrapper) GetMarkets() ([]*environment.Market, error) {
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
-func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
+func (wrapper *KrakenWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
 	krakenOrderBook, err := wrapper.api.Depth(MarketNameFor(market, wrapper), 0)
 	if err != nil {
 		return nil, err
@@ -110,7 +112,7 @@ func (wrapper KrakenWrapper) GetOrderBook(market *environment.Market) (*environm
 }
 
 // BuyLimit performs a limit buy action.
-func (wrapper KrakenWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper *KrakenWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "buy", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
 	if err != nil {
 		return "", err
@@ -121,7 +123,7 @@ func (wrapper KrakenWrapper) BuyLimit(market *environment.Market, amount float64
 // SellLimit performs a limit sell action.
 //
 // NOTE: In kraken buy and sell orders behave the same (the go kraken api automatically puts it on correct side)
-func (wrapper KrakenWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
+func (wrapper *KrakenWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "sell", "limit", fmt.Sprint(amount), map[string]string{"price": fmt.Sprint(limit)})
 	if err != nil {
 		return "", err
@@ -130,7 +132,7 @@ func (wrapper KrakenWrapper) SellLimit(market *environment.Market, amount float6
 }
 
 // BuyMarket performs a market buy action.
-func (wrapper KrakenWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
+func (wrapper *KrakenWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
 	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "buy", "market", fmt.Sprint(amount), map[string]string{})
 	if err != nil {
 		return "", err
@@ -139,7 +141,7 @@ func (wrapper KrakenWrapper) BuyMarket(market *environment.Market, amount float6
 }
 
 // SellMarket performs a market sell action.
-func (wrapper KrakenWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
+func (wrapper *KrakenWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
 	orderNumber, err := wrapper.api.AddOrder(MarketNameFor(market, wrapper), "sell", "market", fmt.Sprint(amount), map[string]string{})
 	if err != nil {
 		return "", err
@@ -148,7 +150,7 @@ func (wrapper KrakenWrapper) SellMarket(market *environment.Market, amount float
 }
 
 // GetTicker gets the updated ticker for a market.
-func (wrapper KrakenWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
+func (wrapper *KrakenWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
 	krakenTicker, err := wrapper.api.Ticker(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err
@@ -168,7 +170,7 @@ func (wrapper KrakenWrapper) GetTicker(market *environment.Market) (*environment
 }
 
 // GetMarketSummary gets the current market summary.
-func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
+func (wrapper *KrakenWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	krakenSummary, err := wrapper.api.Ticker(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err
@@ -193,7 +195,7 @@ func (wrapper KrakenWrapper) GetMarketSummary(market *environment.Market) (*envi
 }
 
 // GetCandles gets the candle data from the exchange.
-func (wrapper KrakenWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
+func (wrapper *KrakenWrapper) GetCandles(market *environment.Market) ([]environment.CandleStick, error) {
 	if !wrapper.websocketOn {
 		now := time.Now()
 
@@ -218,13 +220,12 @@ func (wrapper KrakenWrapper) GetCandles(market *environment.Market) ([]environme
 		step := time.Minute * 30
 		start := time.Unix(krakenTrades.Trades[0].Time, 0)
 
-		open := decimal.NewFromFloat(krakenTrades.Trades[0].PriceFloat)
-		high := open
-		low := open
-		close := open
+		var open = decimal.NewFromFloat(krakenTrades.Trades[0].PriceFloat)
+		var high = open
+		var low = open
+		var close decimal.Decimal
 
 		N := len(trades)
-
 		for i := 1; i < N; i++ {
 			currentTrade := trades[i]
 			candleTime := time.Unix(currentTrade.Time, 0)
@@ -263,7 +264,7 @@ func (wrapper KrakenWrapper) GetCandles(market *environment.Market) ([]environme
 }
 
 // GetBalance gets the balance of the user of the specified currency.
-func (wrapper KrakenWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
+func (wrapper *KrakenWrapper) GetBalance(symbol string) (*decimal.Decimal, error) {
 	_, err := wrapper.api.Balance()
 	if err != nil {
 		return nil, err
@@ -272,10 +273,16 @@ func (wrapper KrakenWrapper) GetBalance(symbol string) (*decimal.Decimal, error)
 	panic("Help me integrate this feature!")
 }
 
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *KrakenWrapper) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Kraken fees are currently hardcoded.
-func (wrapper KrakenWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
+func (wrapper *KrakenWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {
 		feePercentage = 0.0016
@@ -289,16 +296,21 @@ func (wrapper KrakenWrapper) CalculateTradingFees(market *environment.Market, am
 }
 
 // CalculateWithdrawFees calculates the withdrawal fees on a specified market.
-func (wrapper KrakenWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
+func (wrapper *KrakenWrapper) CalculateWithdrawFees(market *environment.Market, amount float64) float64 {
 	panic("Not Implemented")
 }
 
 // FeedConnect connects to the feed of the exchange.
-func (wrapper KrakenWrapper) FeedConnect(markets []*environment.Market) error {
+func (wrapper *KrakenWrapper) FeedConnect(markets []*environment.Market) error {
 	return ErrWebsocketNotSupported
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper KrakenWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
+func (wrapper *KrakenWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
 	panic("Websocket Not Supported")
+}
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *KrakenWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	panic("Not Supported")
 }

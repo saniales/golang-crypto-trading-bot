@@ -17,9 +17,10 @@
 package exchanges
 
 import (
-	"errors"
 	"fmt"
+	"sort"
 
+	"github.com/juju/errors"
 	"github.com/saniales/go-hitbtc"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
@@ -27,20 +28,24 @@ import (
 
 // HitBtcWrapperV2 wraps HitBtc API v2.0
 type HitBtcWrapperV2 struct {
-	api         *hitbtc.HitBtc
-	ws          *hitbtc.WSClient
-	websocketOn bool
-	summaries   *SummaryCache
+	api              *hitbtc.HitBtc
+	ws               *hitbtc.WSClient
+	websocketOn      bool
+	summaries        *SummaryCache
+	orderbook        *OrderbookCache
+	depositAddresses map[string]string
 }
 
 // NewHitBtcV2Wrapper creates a generic wrapper of the HitBtc API v2.0.
-func NewHitBtcV2Wrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewHitBtcV2Wrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	ws, _ := hitbtc.NewWSClient()
 	return &HitBtcWrapperV2{
-		api:         hitbtc.New(publicKey, secretKey),
-		ws:          ws,
-		websocketOn: false,
-		summaries:   NewSummaryCache(),
+		api:              hitbtc.New(publicKey, secretKey),
+		ws:               ws,
+		websocketOn:      false,
+		summaries:        NewSummaryCache(),
+		orderbook:        NewOrderbookCache(),
+		depositAddresses: depositAddresses,
 	}
 }
 
@@ -75,31 +80,41 @@ func (wrapper *HitBtcWrapperV2) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper *HitBtcWrapperV2) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
-	hitbtcOrderBook, err := wrapper.api.GetOrderbook(MarketNameFor(market, wrapper))
+	ret, exists := wrapper.orderbook.Get(market)
+	if !wrapper.websocketOn {
+		hitbtcOrderBook, err := wrapper.api.GetOrderbook(MarketNameFor(market, wrapper))
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		ret = &environment.OrderBook{}
+		for _, order := range hitbtcOrderBook.Bid {
+			amount := decimal.NewFromFloat(order.Size)
+			rate := decimal.NewFromFloat(order.Price)
+			ret.Bids = append(ret.Bids, environment.Order{
+				Quantity: amount,
+				Value:    rate,
+			})
+		}
+		for _, order := range hitbtcOrderBook.Ask {
+			amount := decimal.NewFromFloat(order.Size)
+			rate := decimal.NewFromFloat(order.Price)
+			ret.Asks = append(ret.Asks, environment.Order{
+				Quantity: amount,
+				Value:    rate,
+			})
+		}
+
+		wrapper.orderbook.Set(market, ret)
+		return ret, nil
 	}
 
-	var orderBook environment.OrderBook
-	for _, order := range hitbtcOrderBook.Bid {
-		amount := decimal.NewFromFloat(order.Size)
-		rate := decimal.NewFromFloat(order.Price)
-		orderBook.Bids = append(orderBook.Bids, environment.Order{
-			Quantity: amount,
-			Value:    rate,
-		})
-	}
-	for _, order := range hitbtcOrderBook.Ask {
-		amount := decimal.NewFromFloat(order.Size)
-		rate := decimal.NewFromFloat(order.Price)
-		orderBook.Asks = append(orderBook.Asks, environment.Order{
-			Quantity: amount,
-			Value:    rate,
-		})
+	if !exists {
+		return nil, errors.New("Orderbook not loaded")
 	}
 
-	return &orderBook, nil
+	return ret, nil
 }
 
 // BuyLimit performs a limit buy action.
@@ -175,7 +190,6 @@ func (wrapper *HitBtcWrapperV2) SellMarket(market *environment.Market, amount fl
 
 // GetTicker gets the updated ticker for a market.
 func (wrapper *HitBtcWrapperV2) GetTicker(market *environment.Market) (*environment.Ticker, error) {
-
 	hitbtcTicker, err := wrapper.api.GetTicker(MarketNameFor(market, wrapper))
 	if err != nil {
 		return nil, err
@@ -194,23 +208,10 @@ func (wrapper *HitBtcWrapperV2) GetTicker(market *environment.Market) (*environm
 // GetMarketSummary gets the current market summary.
 func (wrapper *HitBtcWrapperV2) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	ret, exists := wrapper.summaries.Get(market)
-	if !exists || !wrapper.websocketOn {
-		hilo, err := wrapper.api.GetAllTicker()
+	if !wrapper.websocketOn {
+		hitbtcSummary, err := wrapper.api.GetTicker(MarketNameFor(market, wrapper))
 		if err != nil {
 			return nil, err
-		}
-
-		var hitbtcSummary *hitbtc.Ticker
-
-		for _, val := range hilo {
-			if val.Symbol == MarketNameFor(market, wrapper) {
-				hitbtcSummary = &val
-				break
-			}
-		}
-
-		if hitbtcSummary == nil {
-			return nil, errors.New("Symbol not found")
 		}
 
 		ask := decimal.NewFromFloat(hitbtcSummary.Ask)
@@ -230,6 +231,11 @@ func (wrapper *HitBtcWrapperV2) GetMarketSummary(market *environment.Market) (*e
 		}
 
 		wrapper.summaries.Set(market, ret)
+		return ret, nil
+	}
+
+	if !exists {
+		return nil, errors.New("Summary not loaded")
 	}
 
 	return ret, nil
@@ -237,7 +243,6 @@ func (wrapper *HitBtcWrapperV2) GetMarketSummary(market *environment.Market) (*e
 
 // GetBalance gets the balance of the user of the specified currency.
 func (wrapper *HitBtcWrapperV2) GetBalance(symbol string) (*decimal.Decimal, error) {
-
 	Hitbtcbalance, err := wrapper.api.GetBalances()
 
 	if err != nil {
@@ -246,7 +251,7 @@ func (wrapper *HitBtcWrapperV2) GetBalance(symbol string) (*decimal.Decimal, err
 
 	for _, hitbtcBalance := range Hitbtcbalance {
 		if hitbtcBalance.Currency == symbol {
-			ret, err := decimal.NewFromString(hitbtcBalance.Currency)
+			ret := decimal.NewFromFloat(hitbtcBalance.Available)
 			if err != nil {
 				return nil, err
 			}
@@ -256,6 +261,12 @@ func (wrapper *HitBtcWrapperV2) GetBalance(symbol string) (*decimal.Decimal, err
 	}
 
 	return nil, errors.New("Symbol not found")
+}
+
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *HitBtcWrapperV2) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
 }
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
@@ -285,9 +296,8 @@ func (wrapper *HitBtcWrapperV2) GetCandles(market *environment.Market) ([]enviro
 // FeedConnect connects to the feed of the exchange.
 func (wrapper *HitBtcWrapperV2) FeedConnect(markets []*environment.Market) error {
 	wrapper.websocketOn = true
-
 	for _, m := range markets {
-		err := wrapper.subscribeMarketSummaryFeed(m)
+		err := wrapper.subscribeFeeds(m)
 		if err != nil {
 			return err
 		}
@@ -296,14 +306,9 @@ func (wrapper *HitBtcWrapperV2) FeedConnect(markets []*environment.Market) error
 	return nil
 }
 
-// SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper *HitBtcWrapperV2) subscribeMarketSummaryFeed(market *environment.Market) error {
-	summaryChannel, err := wrapper.ws.SubscribeTicker(MarketNameFor(market, wrapper))
-	if err != nil {
-		return err
-	}
-
-	go func(wrapper *HitBtcWrapperV2, summaryChannel <-chan hitbtc.WSNotificationTickerResponse, m *environment.Market) {
+// subscribeFeeds subscribes to the Market Summary Feed service.
+func (wrapper *HitBtcWrapperV2) subscribeFeeds(market *environment.Market) error {
+	handleTicker := func(wrapper *HitBtcWrapperV2, summaryChannel <-chan hitbtc.WSNotificationTickerResponse, m *environment.Market) {
 		for {
 			summary, stillOpen := <-summaryChannel
 			if !stillOpen {
@@ -328,7 +333,132 @@ func (wrapper *HitBtcWrapperV2) subscribeMarketSummaryFeed(market *environment.M
 
 			wrapper.summaries.Set(m, sum)
 		}
-	}(wrapper, summaryChannel, market)
+	}
 
+	handleOrderbook := func(wrapper *HitBtcWrapperV2, bookSnapshotChannel <-chan hitbtc.WSNotificationOrderbookSnapshot, bookUpdateChannel <-chan hitbtc.WSNotificationOrderbookUpdate, m *environment.Market) {
+		var currentSequence int64
+
+		for {
+			select {
+			case snap, stillOpen := <-bookSnapshotChannel:
+				if !stillOpen {
+					return
+				}
+				if currentSequence > snap.Sequence { // my snapshot is more recent than the one provided
+					continue
+				}
+
+				orderbook := new(environment.OrderBook)
+
+				for _, item := range snap.Ask {
+					price, _ := decimal.NewFromString(item.Price)
+					size, _ := decimal.NewFromString(item.Size)
+
+					orderbook.Asks = append(orderbook.Asks, environment.Order{
+						Value:    price,
+						Quantity: size,
+					})
+				}
+				for _, item := range snap.Bid {
+					price, _ := decimal.NewFromString(item.Price)
+					size, _ := decimal.NewFromString(item.Size)
+
+					orderbook.Bids = append(orderbook.Bids, environment.Order{
+						Value:    price,
+						Quantity: size,
+					})
+				}
+				wrapper.orderbook.Set(market, orderbook)
+			case update, stillOpen := <-bookUpdateChannel:
+				if !stillOpen {
+					return
+				}
+
+				if currentSequence > update.Sequence {
+					continue // my snapshot is more recent than the one provided
+				}
+
+				orderbook, exists := wrapper.orderbook.Get(m)
+				if !exists {
+					continue // wait for snapshot
+				}
+
+				orderbook.Asks = updateBook(orderbook.Asks, update.Ask, false)
+				orderbook.Bids = updateBook(orderbook.Bids, update.Bid, true)
+
+				wrapper.orderbook.Set(market, orderbook)
+			}
+		}
+	}
+
+	summaryChannel, err := wrapper.ws.SubscribeTicker(MarketNameFor(market, wrapper))
+	if err != nil {
+		return err
+	}
+
+	bookUpdateChannel, bookSnapshotChannel, err := wrapper.ws.SubscribeOrderbook(MarketNameFor(market, wrapper))
+	if err != nil {
+		return err
+	}
+
+	go handleTicker(wrapper, summaryChannel, market)
+	go handleOrderbook(wrapper, bookSnapshotChannel, bookUpdateChannel, market)
+	return nil
+}
+
+func updateBook(ordersToUpdate []environment.Order, newOrders []hitbtc.WSSubtypeTrade, reverseOrdering bool) []environment.Order {
+	N := len(ordersToUpdate)
+
+	for _, item := range newOrders {
+		// replace values
+		price, _ := decimal.NewFromString(item.Price)
+		size, _ := decimal.NewFromString(item.Size)
+
+		newOrder := environment.Order{
+			Value:    price,
+			Quantity: size,
+		}
+
+		i := sort.Search(N, func(i int) bool {
+			if reverseOrdering {
+				return ordersToUpdate[i].Value.LessThanOrEqual(price)
+			}
+			return ordersToUpdate[i].Value.GreaterThanOrEqual(price)
+		})
+		if size.Equals(decimal.Zero) { //remove it
+			if i == N-1 {
+				ordersToUpdate = ordersToUpdate[:i-1]
+				N--
+			} else { // i < N - 1
+				ordersToUpdate = append(ordersToUpdate[:i], ordersToUpdate[i+1:]...)
+				N--
+			}
+		} else if i == N { // not found, append
+			ordersToUpdate = append(ordersToUpdate, newOrder)
+			N++
+		} else if price.Equals(ordersToUpdate[i].Value) {
+			// replace it
+			ordersToUpdate[i] = newOrder
+		} else if i == 0 { // prepend it
+			ordersToUpdate = append([]environment.Order{newOrder}, ordersToUpdate...)
+			N++
+		} else { // 0 < i < N, so put new order in the middle
+			orders := ordersToUpdate[:i-1]
+			orders = append(orders, newOrder)
+			orders = append(orders, ordersToUpdate[i-1:]...)
+			ordersToUpdate = orders
+			N++
+		}
+	}
+
+	return ordersToUpdate
+}
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *HitBtcWrapperV2) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	_, err := wrapper.api.Withdraw(destinationAddress, coinTicker, amount)
+	if err != nil {
+		return err
+	}
 	return nil
 }

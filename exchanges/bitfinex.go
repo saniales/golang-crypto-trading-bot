@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -18,15 +19,19 @@ type BitfinexWrapper struct {
 	websocketOn         bool
 	unsubscribeChannels map[string]chan bool
 	summaries           *SummaryCache
+	orderbook           *OrderbookCache
+	depositAddresses    map[string]string
 }
 
 // NewBitfinexWrapper creates a generic wrapper of the bittrex API.
-func NewBitfinexWrapper(publicKey string, secretKey string) ExchangeWrapper {
+func NewBitfinexWrapper(publicKey string, secretKey string, depositAddresses map[string]string) ExchangeWrapper {
 	return &BitfinexWrapper{
 		api:                 bitfinex.NewClient().Auth(publicKey, secretKey),
 		unsubscribeChannels: make(map[string]chan bool),
 		summaries:           NewSummaryCache(),
+		orderbook:           NewOrderbookCache(),
 		websocketOn:         false,
+		depositAddresses:    depositAddresses,
 	}
 }
 
@@ -61,44 +66,54 @@ func (wrapper *BitfinexWrapper) GetMarkets() ([]*environment.Market, error) {
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper *BitfinexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
-	bitfinexOrderBook, err := wrapper.api.OrderBook.Get(MarketNameFor(market, wrapper), 0, 0, false)
-	if err != nil {
-		return nil, err
-	}
-
-	var orderBook environment.OrderBook
-	for _, order := range bitfinexOrderBook.Bids {
-		amount, _ := decimal.NewFromString(order.Amount)
-		rate, _ := decimal.NewFromString(order.Rate)
-
-		ts, err := order.ParseTime()
+	if !wrapper.websocketOn {
+		bitfinexOrderBook, err := wrapper.api.OrderBook.Get(MarketNameFor(market, wrapper), 0, 0, false)
 		if err != nil {
-			ts = new(time.Time)
+			return nil, err
 		}
 
-		orderBook.Asks = append(orderBook.Asks, environment.Order{
-			Quantity:  amount,
-			Value:     rate,
-			Timestamp: *ts,
-		})
-	}
-	for _, order := range bitfinexOrderBook.Asks {
-		amount, _ := decimal.NewFromString(order.Amount)
-		rate, _ := decimal.NewFromString(order.Rate)
+		var orderBook environment.OrderBook
+		for _, order := range bitfinexOrderBook.Bids {
+			amount, _ := decimal.NewFromString(order.Amount)
+			rate, _ := decimal.NewFromString(order.Rate)
 
-		ts, err := order.ParseTime()
-		if err != nil {
-			ts = new(time.Time)
+			ts, err := order.ParseTime()
+			if err != nil {
+				ts = new(time.Time)
+			}
+
+			orderBook.Asks = append(orderBook.Asks, environment.Order{
+				Quantity:  amount,
+				Value:     rate,
+				Timestamp: *ts,
+			})
+		}
+		for _, order := range bitfinexOrderBook.Asks {
+			amount, _ := decimal.NewFromString(order.Amount)
+			rate, _ := decimal.NewFromString(order.Rate)
+
+			ts, err := order.ParseTime()
+			if err != nil {
+				ts = new(time.Time)
+			}
+
+			orderBook.Bids = append(orderBook.Bids, environment.Order{
+				Quantity:  amount,
+				Value:     rate,
+				Timestamp: *ts,
+			})
 		}
 
-		orderBook.Bids = append(orderBook.Bids, environment.Order{
-			Quantity:  amount,
-			Value:     rate,
-			Timestamp: *ts,
-		})
+		wrapper.orderbook.Set(market, &orderBook)
+		return &orderBook, nil
 	}
 
-	return &orderBook, nil
+	orderbook, exists := wrapper.orderbook.Get(market)
+	if !exists {
+		return nil, errors.New("Orderbook not loaded")
+	}
+
+	return orderbook, nil
 }
 
 // BuyLimit performs a limit buy action.
@@ -137,7 +152,7 @@ func (wrapper *BitfinexWrapper) SellMarket(market *environment.Market, amount fl
 //
 // NOTE: In bitfinex buy and sell orders behave the same (in sell the amount is negative)
 func (wrapper *BitfinexWrapper) createOrder(market *environment.Market, orderType string, amount float64, price float64) (string, error) {
-	orderNumber, err := wrapper.api.Orders.Create(MarketNameFor(market, wrapper), amount, price, bitfinex.OrderTypeExchangeLimit)
+	orderNumber, err := wrapper.api.Orders.Create(MarketNameFor(market, wrapper), amount, price, orderType)
 	if err != nil {
 		return "", err
 	}
@@ -220,6 +235,12 @@ func (wrapper *BitfinexWrapper) GetBalance(symbol string) (*decimal.Decimal, err
 	return nil, errors.New("Symbol not found")
 }
 
+// GetDepositAddress gets the deposit address for the specified coin on the exchange.
+func (wrapper *BitfinexWrapper) GetDepositAddress(coinTicker string) (string, bool) {
+	addr, exists := wrapper.depositAddresses[coinTicker]
+	return addr, exists
+}
+
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
 //     NOTE: In Bitfinex fees are currently hardcoded.
@@ -245,31 +266,59 @@ func (wrapper *BitfinexWrapper) CalculateWithdrawFees(market *environment.Market
 func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error {
 	err := wrapper.api.WebSocket.Connect()
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
 
+	bookMap := make(map[string]chan []float64)
+	tickers := make(chan []float64, 25)
+
 	for _, m := range markets {
-		wrapper.subscribeMarketSummaryFeed(m)
+		tickerKey := MarketNameFor(m, wrapper)
+		bookMap[tickerKey] = make(chan []float64, 25)
+		wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanBook, tickerKey, bookMap[tickerKey])
+		wrapper.subscribeFeeds(m, tickers, bookMap[tickerKey]) // tickers is not used
 	}
 
 	wrapper.websocketOn = true
 
-	go wrapper.api.WebSocket.Subscribe()
+	go func(tickers chan []float64, orderbooks map[string]chan []float64) {
+		for {
+			err = wrapper.api.WebSocket.Subscribe()
+			if err != nil {
+				fmt.Println(err)
+			}
 
+			wrapper.api.WebSocket.Close()
+
+			for _, channel := range bookMap {
+				close(channel)
+			}
+
+			bookMap := make(map[string]chan []float64)
+			err = errors.New("")
+			for err != nil {
+				err = wrapper.api.WebSocket.Connect()
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+			wrapper.api.WebSocket.ClearSubscriptions()
+
+			for _, m := range markets {
+				tickerKey := MarketNameFor(m, wrapper)
+				bookMap[tickerKey] = make(chan []float64)
+				//wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTicker, tickerKey, tickers)
+				wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanBook, tickerKey, bookMap[tickerKey])
+				//wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTrade, tickerKey, trades)
+			}
+		}
+	}(tickers, bookMap)
 	return nil
 }
 
 // subscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
-func (wrapper *BitfinexWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
-	tickers := make(chan []float64)
-	orderbooks := make(chan []float64)
-	trades := make(chan []float64)
-
-	tickerKey := MarketNameFor(market, wrapper)
-
-	wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTicker, tickerKey, tickers)
-	wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanBook, tickerKey, orderbooks)
-	wrapper.api.WebSocket.AddSubscribe(bitfinex.ChanTrade, tickerKey, trades)
+func (wrapper *BitfinexWrapper) subscribeFeeds(market *environment.Market, tickers <-chan []float64, orderbooks <-chan []float64) {
+	//trades := make(chan []float64)
 
 	//     NOTE: Content of result array
 	//     BID	float	Price of last highest bid
@@ -282,9 +331,8 @@ func (wrapper *BitfinexWrapper) subscribeMarketSummaryFeed(market *environment.M
 	//     VOLUME	float	Daily volume
 	//     HIGH	float	Daily high
 	//     LOW	float	Daily low
-	handleTicker := func(results <-chan []float64, tickerKey string) {
+	handleTicker := func(results <-chan []float64, market *environment.Market) {
 		for {
-
 			values, stillOpen := <-results
 			if !stillOpen {
 				return
@@ -301,23 +349,53 @@ func (wrapper *BitfinexWrapper) subscribeMarketSummaryFeed(market *environment.M
 		}
 	}
 
-	/*
-		handleOrderbook := func(results <-chan []float64, tickerKey string) {
-			for {
-				values, closed := <-results
-				if closed {
-					return
-				}
-				orderbook := wrapper
-				wrapper.summaries.Set(market, &environment.OrderBook{
-					Bid:    decimal.NewFromFloat(values[0]),
-					Ask:    decimal.NewFromFloat(values[2]),
-					Volume: decimal.NewFromFloat(values[7]),
-					High:   decimal.NewFromFloat(values[8]),
-					Low:    decimal.NewFromFloat(values[9]),
-				})
+	handleOrderbook := func(results <-chan []float64, m *environment.Market) {
+		orderbookMap := make(map[float64]float64)
+		for {
+			// values : []float64 { PRICE, COUNT, TOTAL_AMOUNT }
+			values, stillOpen := <-results
+			if !stillOpen {
+				return
 			}
-		}*/
+
+			if len(values) != 3 { // for client bug : https://github.com/bitfinexcom/bitfinex-api-go/issues/133
+				continue
+			}
+
+			price := values[0]
+			count := values[1]
+			amount := values[2]
+
+			if count == 0 {
+				delete(orderbookMap, price)
+				continue
+			}
+
+			orderbookMap[price] = amount
+
+			orderbook := environment.OrderBook{
+				Asks: make([]environment.Order, 0, 25),
+				Bids: make([]environment.Order, 0, 25),
+			}
+
+			// now let's create the cache
+			for price, amount := range orderbookMap {
+				if amount < 0 {
+					orderbook.Asks = insertSort(orderbook.Asks, environment.Order{
+						Value:    decimal.NewFromFloat(price),
+						Quantity: decimal.NewFromFloat(-amount),
+					}, false)
+				} else if amount > 0 {
+					orderbook.Bids = insertSort(orderbook.Bids, environment.Order{
+						Value:    decimal.NewFromFloat(price),
+						Quantity: decimal.NewFromFloat(amount),
+					}, true)
+				}
+			}
+
+			wrapper.orderbook.Set(m, &orderbook)
+		}
+	}
 
 	/*
 		handleTrades := func(results <-chan []float64, tickerKey string) {
@@ -337,5 +415,32 @@ func (wrapper *BitfinexWrapper) subscribeMarketSummaryFeed(market *environment.M
 		}
 	*/
 
-	go handleTicker(tickers, tickerKey)
+	go handleTicker(tickers, market)
+	go handleOrderbook(orderbooks, market)
+}
+
+// Withdraw performs a withdraw operation from the exchange to a destination address.
+func (wrapper *BitfinexWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
+	status, err := wrapper.api.Wallet.WithdrawCrypto(amount, coinTicker, bitfinex.WALLET_TRADING, destinationAddress)
+	if err != nil {
+		return err
+	}
+	if status[0].Status == "error" {
+		return errors.New(status[0].Message)
+	}
+
+	return nil
+}
+
+func insertSort(data []environment.Order, el environment.Order, reverse bool) []environment.Order {
+	index := sort.Search(len(data), func(i int) bool {
+		if reverse {
+			return data[i].Value.LessThan(el.Value)
+		}
+		return data[i].Value.GreaterThan(el.Value)
+	})
+	data = append(data, environment.Order{})
+	copy(data[index+1:], data[index:])
+	data[index] = el
+	return data
 }
