@@ -54,6 +54,7 @@ func (is IntervalStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets [
 			is.Model.OnError(err)
 		}
 	}
+
 	if !hasUpdateFunc {
 		_err := errors.New("OnUpdate func cannot be empty")
 		if hasErrorFunc {
