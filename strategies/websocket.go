@@ -3,8 +3,6 @@ package strategies
 import (
 	"errors"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
 )
@@ -35,6 +33,13 @@ func (wss WebsocketStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets
 	hasUpdateFunc := wss.Model.OnUpdate != nil
 	hasErrorFunc := wss.Model.OnError != nil
 
+	if hasSetupFunc {
+		err = wss.Model.Setup(wrappers, markets)
+		if err != nil && hasErrorFunc {
+			wss.Model.OnError(err)
+		}
+	}
+
 	// update is handled by the developer externally, here we just checked for existence.
 	if !hasUpdateFunc {
 		_err := errors.New("OnUpdate func cannot be empty")
@@ -45,43 +50,10 @@ func (wss WebsocketStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets
 		}
 	}
 
-	if hasSetupFunc {
-		err = wss.Model.Setup(wrappers, markets)
-		if err != nil && hasErrorFunc {
-			wss.Model.OnError(err)
-		}
-	}
-
 	if hasTearDownFunc {
 		err = wss.Model.TearDown(wrappers, markets)
 		if err != nil && hasErrorFunc {
 			wss.Model.OnError(err)
 		}
 	}
-}
-
-var example = WebsocketStrategy{
-	Model: StrategyModel{
-		Name: "example",
-		Setup: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
-			for _, wrapper := range wrappers {
-				err := wrapper.FeedConnect(markets)
-				if err == exchanges.ErrWebsocketNotSupported || err == nil {
-					continue
-				}
-				return err
-			}
-			return nil
-		},
-		OnUpdate: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
-			// do something
-			return nil
-		},
-		TearDown: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
-			return nil
-		},
-		OnError: func(err error) {
-			logrus.Error(err)
-		},
-	},
 }
