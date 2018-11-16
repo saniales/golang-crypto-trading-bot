@@ -153,25 +153,38 @@ func (wrapper *BinanceWrapper) orderbookFromREST(market *environment.Market) (*e
 // BuyLimit performs a limit buy action.
 func (wrapper *BinanceWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeLimit).Side(binance.SideTypeBuy).Symbol(MarketNameFor(market, wrapper)).Price(fmt.Sprint(limit)).Quantity(fmt.Sprint(amount)).Do(context.Background())
-	return fmt.Sprint(orderNumber.ClientOrderID), err
+	if err != nil {
+		return "", err
+	}
+	return orderNumber.ClientOrderID, nil
 }
 
 // SellLimit performs a limit sell action.
 func (wrapper *BinanceWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeLimit).Side(binance.SideTypeSell).Symbol(MarketNameFor(market, wrapper)).Price(fmt.Sprint(limit)).Quantity(fmt.Sprint(amount)).Do(context.Background())
-	return fmt.Sprint(orderNumber.ClientOrderID), err
+	if err != nil {
+		return "", err
+	}
+	return orderNumber.ClientOrderID, nil
 }
 
 // BuyMarket performs a market buy action.
 func (wrapper *BinanceWrapper) BuyMarket(market *environment.Market, amount float64) (string, error) {
 	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeMarket).Side(binance.SideTypeBuy).Symbol(MarketNameFor(market, wrapper)).Quantity(fmt.Sprint(amount)).Do(context.Background())
-	return fmt.Sprint(orderNumber.ClientOrderID), err
+	if err != nil {
+		return "", err
+	}
+
+	return orderNumber.ClientOrderID, nil
 }
 
 // SellMarket performs a market sell action.
 func (wrapper *BinanceWrapper) SellMarket(market *environment.Market, amount float64) (string, error) {
 	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeMarket).Side(binance.SideTypeSell).Symbol(MarketNameFor(market, wrapper)).Quantity(fmt.Sprint(amount)).Do(context.Background())
-	return fmt.Sprint(orderNumber.ClientOrderID), err
+	if err != nil {
+		return "", err
+	}
+	return orderNumber.ClientOrderID, nil
 }
 
 // GetTicker gets the updated ticker for a market.
