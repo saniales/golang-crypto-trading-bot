@@ -22,8 +22,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Websocket strategy
-func Websocket() strategies.Strategy {
+var (
+	Websocket = websocket()
+)
+
+// websocket strategy
+func websocket() strategies.Strategy {
 	return strategies.WebsocketStrategy{
 		Model: strategies.StrategyModel{
 			Name: "Websocket",

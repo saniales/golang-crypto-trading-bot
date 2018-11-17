@@ -29,8 +29,14 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+var (
+	Watch5Sec                  = watch5Sec()
+	SlackIntegrationExample    = slackIntegrationExample()
+	TelegramIntegrationExample = telegramIntegrationExample()
+)
+
 // Watch5Sec prints out the info of the market every 5 seconds.
-func Watch5Sec() strategies.Strategy {
+func watch5Sec() strategies.Strategy {
 	return strategies.IntervalStrategy{
 		Model: strategies.StrategyModel{
 			Name: "Watch5Sec",
@@ -63,7 +69,7 @@ var slackBot *slacker.Slacker
 
 // SlackIntegrationExample send messages as a strategy.
 // RTM not supported (and usually not requested when trading, this is an automated slackBot).
-func SlackIntegrationExample() strategies.Strategy {
+func slackIntegrationExample() strategies.Strategy {
 	return strategies.IntervalStrategy{
 		Model: strategies.StrategyModel{
 			Name: "SlackIntegrationExample",
@@ -99,7 +105,7 @@ func SlackIntegrationExample() strategies.Strategy {
 
 var telegramBot *tb.Bot
 
-func TelegramIntegrationExample() strategies.Strategy {
+func telegramIntegrationExample() strategies.Strategy {
 	return strategies.IntervalStrategy{
 		Model: strategies.StrategyModel{
 			Name: "TelegramIntegrationExample",
