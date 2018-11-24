@@ -29,120 +29,109 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-var (
-	Watch5Sec                  = watch5Sec()
-	SlackIntegrationExample    = slackIntegrationExample()
-	TelegramIntegrationExample = telegramIntegrationExample()
-)
-
 // Watch5Sec prints out the info of the market every 5 seconds.
-func watch5Sec() strategies.Strategy {
-	return strategies.IntervalStrategy{
-		Model: strategies.StrategyModel{
-			Name: "Watch5Sec",
-			Setup: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
-				fmt.Println("Watch5Sec starting")
-				return nil
-			},
-			OnUpdate: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
-				_, err := wrappers[0].GetMarketSummary(markets[0])
-				if err != nil {
-					return err
-				}
-				logrus.Info(markets)
-				logrus.Info(wrappers)
-				return nil
-			},
-			OnError: func(err error) {
-				fmt.Println(err)
-			},
-			TearDown: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
-				fmt.Println("Watch5Sec exited")
-				return nil
-			},
+var Watch5Sec = strategies.IntervalStrategy{
+	Model: strategies.StrategyModel{
+		Name: "Watch5Sec",
+		Setup: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
+			fmt.Println("Watch5Sec starting")
+			return nil
 		},
-		Interval: time.Second * 5,
-	}
+		OnUpdate: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
+			_, err := wrappers[0].GetMarketSummary(markets[0])
+			if err != nil {
+				return err
+			}
+			logrus.Info(markets)
+			logrus.Info(wrappers)
+			return nil
+		},
+		OnError: func(err error) {
+			fmt.Println(err)
+		},
+		TearDown: func(wrappers []exchanges.ExchangeWrapper, markets []*environment.Market) error {
+			fmt.Println("Watch5Sec exited")
+			return nil
+		},
+	},
+	Interval: time.Second * 5,
 }
 
 var slackBot *slacker.Slacker
 
-// SlackIntegrationExample send messages as a strategy.
+// SlackIntegrationExample send messages to Slack as a strategy.
 // RTM not supported (and usually not requested when trading, this is an automated slackBot).
-func slackIntegrationExample() strategies.Strategy {
-	return strategies.IntervalStrategy{
-		Model: strategies.StrategyModel{
-			Name: "SlackIntegrationExample",
-			Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
-				// connect slack token
-				slackBot = slacker.NewClient("YOUR-TOKEN-HERE")
-				slackBot.Init(func() {
-					log.Println("Slack BOT Connected")
-				})
-				slackBot.Err(func(err string) {
-					log.Println("Error during slack slackBot connection: ", err)
-				})
-				go func() {
-					err := slackBot.Listen()
-					if err != nil {
-						log.Fatal(err)
-					}
-				}()
-				return nil
-			},
-			OnUpdate: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
-				//if updates has requirements
-				_, _, err := slackBot.Client.PostMessage("DESIRED-CHANNEL", "OMG something happening!!!!!", slack.PostMessageParameters{})
-				return err
-			},
-			OnError: func(err error) {
-				logrus.Errorf("I Got an error %s", err)
-			},
+var SlackIntegrationExample = strategies.IntervalStrategy{
+	Model: strategies.StrategyModel{
+		Name: "SlackIntegrationExample",
+		Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
+			// connect slack token
+			slackBot = slacker.NewClient("YOUR-TOKEN-HERE")
+			slackBot.Init(func() {
+				log.Println("Slack BOT Connected")
+			})
+			slackBot.Err(func(err string) {
+				log.Println("Error during slack slackBot connection: ", err)
+			})
+			go func() {
+				err := slackBot.Listen()
+				if err != nil {
+					log.Fatal(err)
+				}
+			}()
+			return nil
 		},
-		Interval: time.Second * 10,
-	}
+		OnUpdate: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
+			//if updates has requirements
+			_, _, err := slackBot.Client.PostMessage("DESIRED-CHANNEL", "OMG something happening!!!!!", slack.PostMessageParameters{})
+			return err
+		},
+		OnError: func(err error) {
+			logrus.Errorf("I Got an error %s", err)
+		},
+	},
+	Interval: time.Second * 10,
 }
 
 var telegramBot *tb.Bot
 
-func telegramIntegrationExample() strategies.Strategy {
-	return strategies.IntervalStrategy{
-		Model: strategies.StrategyModel{
-			Name: "TelegramIntegrationExample",
-			Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
-				telegramBot, err := tb.NewBot(tb.Settings{
-					Token:  "692317936:AAGgC-IFG5M5PBZquTJzl4a83uWUF46eUj8",
-					Poller: &tb.LongPoller{Timeout: 10 * time.Second},
-				})
+// TelegramIntegrationExample send messages to Telegram as a strategy.
+var TelegramIntegrationExample = strategies.IntervalStrategy{
+	Model: strategies.StrategyModel{
+		Name: "TelegramIntegrationExample",
+		Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
+			telegramBot, err := tb.NewBot(tb.Settings{
+				Token:  "YOUR-TELEGRAM-TOKEN",
+				Poller: &tb.LongPoller{Timeout: 10 * time.Second},
+			})
 
-				if err != nil {
-					return err
-				}
+			if err != nil {
+				return err
+			}
 
-				telegramBot.Start()
-				return nil
-			},
-			OnUpdate: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
-				telegramBot.Send(&tb.User{
-					Username: "YOUR-USERNAME-GROUP-OR-USER",
-				}, "OMG SOMETHING HAPPENING!!!!!", tb.SendOptions{})
-
-				/*
-					// Optionally it can have options
-					telegramBot.Send(tb.User{
-						Username: "YOUR-JOINED-GROUP-USERNAME",
-					}, "OMG SOMETHING HAPPENING!!!!!", tb.SendOptions{})
-				*/
-				return nil
-			},
-			OnError: func(err error) {
-				logrus.Errorf("I Got an error %s", err)
-				telegramBot.Stop()
-			},
-			TearDown: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
-				telegramBot.Stop()
-				return nil
-			},
+			telegramBot.Start()
+			return nil
 		},
-	}
+		OnUpdate: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
+			telegramBot.Send(&tb.User{
+				Username: "YOUR-USERNAME-GROUP-OR-USER",
+			}, "OMG SOMETHING HAPPENING!!!!!", tb.SendOptions{})
+
+			/*
+				// Optionally it can have options
+				telegramBot.Send(tb.User{
+					Username: "YOUR-JOINED-GROUP-USERNAME",
+				}, "OMG SOMETHING HAPPENING!!!!!", tb.SendOptions{})
+			*/
+			return nil
+		},
+		OnError: func(err error) {
+			logrus.Errorf("I Got an error %s", err)
+			telegramBot.Stop()
+		},
+		TearDown: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
+			telegramBot.Stop()
+			return nil
+		},
+	},
 }
