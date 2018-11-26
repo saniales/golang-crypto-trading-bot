@@ -25,7 +25,7 @@ If you need to, you can create a strategy and bind it to the bot:
 import bot "github.com/saniales/golang-crypto-trading-bot/cmd"
 
 func main() {
-    bot.AddCustomStrategy(myStrategy)
+    bot.AddCustomStrategy(examples.MyStrategy)
     bot.Execute()
 }
 ```
