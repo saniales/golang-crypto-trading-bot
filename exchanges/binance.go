@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/adshao/go-binance"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
@@ -369,13 +368,11 @@ func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market
 			}
 			// 24 hours max
 			currentUpdateID := lastUpdateID
-			logrus.Info(time.Now())
+
 			done, _, err := binance.WsPartialDepthServe(MarketNameFor(market, wrapper), "20", func(event *binance.WsPartialDepthEvent) {
 				if event.LastUpdateID <= currentUpdateID { // this update is more recent than the latest fetched
 					return
 				}
-
-				logrus.Info(time.Now())
 
 				var orderbook environment.OrderBook
 
@@ -402,7 +399,6 @@ func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market
 					orderbook.Bids[i] = newOrder
 				}
 
-				logrus.Infof("%s : %s", MarketNameFor(market, wrapper), orderbook)
 				wrapper.orderbook.Set(market, &orderbook)
 			}, func(err error) {
 				logrus.Error(err)
