@@ -20,6 +20,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/nlopes/slack"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
@@ -131,6 +132,55 @@ var TelegramIntegrationExample = strategies.IntervalStrategy{
 		},
 		TearDown: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			telegramBot.Stop()
+			return nil
+		},
+	},
+}
+
+var discordBot *discordgo.Session
+
+// DiscordIntegrationExample sends messages to a specified discord channel.
+var DiscordIntegrationExample = strategies.IntervalStrategy{
+	Model: strategies.StrategyModel{
+		Name: "DiscordIntegrationExample",
+		Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
+			// Create a new Discord session using the provided bot token.
+			discordBot, err := discordgo.New("Bot " + "YOUR-DISCORD-TOKEN")
+			if err != nil {
+				return err
+			}
+
+			go func() {
+				err = discordBot.Open()
+				if err != nil {
+					return
+				}
+			}()
+
+			//sleep some time
+			time.Sleep(time.Second * 5)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+		OnUpdate: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
+			_, err := discordBot.ChannelMessageSend("CHANNEL-ID", "OMG SOMETHING HAPPENING!!!!!")
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+		OnError: func(err error) {
+			logrus.Errorf("I Got an error %s", err)
+			telegramBot.Stop()
+		},
+		TearDown: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
+			err := discordBot.Close()
+			if err != nil {
+				return err
+			}
 			return nil
 		},
 	},
