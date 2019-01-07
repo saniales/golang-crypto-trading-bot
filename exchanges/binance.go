@@ -369,7 +369,7 @@ func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market
 			// 24 hours max
 			currentUpdateID := lastUpdateID
 
-			done, _, err := binance.WsPartialDepthServe(MarketNameFor(market, wrapper), "20", func(event *binance.WsPartialDepthEvent) {
+			done, _, _ := binance.WsPartialDepthServe(MarketNameFor(market, wrapper), "20", func(event *binance.WsPartialDepthEvent) {
 				if event.LastUpdateID <= currentUpdateID { // this update is more recent than the latest fetched
 					return
 				}
