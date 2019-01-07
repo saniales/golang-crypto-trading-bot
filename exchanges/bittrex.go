@@ -218,35 +218,13 @@ func (wrapper *BittrexWrapper) CalculateWithdrawFees(market *environment.Market,
 // FeedConnect connects to the feed of the exchange.
 func (wrapper *BittrexWrapper) FeedConnect(markets []*environment.Market) error {
 	return ErrWebsocketNotSupported
-
-	wrapper.websocketOn = true
-
-	for _, m := range markets {
-		wrapper.subscribeMarketSummaryFeed(m)
-	}
-
-	return nil
 }
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 //
 //     NOTE: Not supported on Bittrex v1 API, use *BittrexWrapperV2.
 func (wrapper *BittrexWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
-	results := make(chan api.ExchangeState)
-
-	wrapper.api.SubscribeExchangeUpdate(MarketNameFor(market, wrapper), results, wrapper.unsubscribeChannels[market])
-	panic("Not implemented")
-	go func(market *environment.Market, results <-chan api.ExchangeState) {
-		for {
-			select {
-			case <-results:
-				//TODO: handle result
-			case <-wrapper.unsubscribeChannels[market]:
-				close(wrapper.unsubscribeChannels[market])
-				delete(wrapper.unsubscribeChannels, market)
-			}
-		}
-	}(market, results)
+	panic(ErrWebsocketNotSupported)
 }
 
 // Withdraw performs a withdraw operation from the exchange to a destination address.
