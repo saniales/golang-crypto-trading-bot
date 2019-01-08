@@ -1,5 +1,6 @@
 <p align="center"><img src="https://res.cloudinary.com/saniales-github/image/upload/v1541856660/saniales/golang-crypto-trading-bot/logo.png" width="360"></p>
 <p align="center">
+  <a href="https://github.com/avelino/awesome-go#other-software"><img src="https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg" alt="Listed on Awesome Go"></img></a>
   <a href="https://travis-ci.org/saniales/golang-crypto-trading-bot"><img src="https://img.shields.io/travis/saniales/golang-crypto-trading-bot.svg?branch=master" alt="Build Status"></img></a>
   <a href="https://godoc.org/github.com/saniales/golang-crypto-trading-bot"><img src="https://godoc.org/github.com/saniales/golang-crypto-trading-bot?status.svg" alt="Godoc reference"></a>
   <a href="https://github.com/saniales/golang-crypto-trading-bot/releases"><img src="https://img.shields.io/github/release/saniales/golang-crypto-trading-bot.svg" alt="Last Release"></a>
