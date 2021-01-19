@@ -18,12 +18,12 @@ package exchanges
 
 import (
 	"fmt"
-	"github.com/satori/go.uuid"
 	"sort"
 
 	"github.com/juju/errors"
 	"github.com/saniales/go-hitbtc"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
+	uuid "github.com/satori/go.uuid"
 	"github.com/shopspring/decimal"
 )
 
@@ -173,10 +173,7 @@ func (wrapper *HitBtcWrapperV2) SellLimit(market *environment.Market, amount flo
 
 // SellMarket performs a market sell action.
 func (wrapper *HitBtcWrapperV2) SellMarket(market *environment.Market, amount float64) (string, error) {
-	clientOrderID, err := uuid.NewV4()
-	if err != nil {
-		return "", err
-	}
+	clientOrderID := uuid.NewV4()
 	requestOrder := hitbtc.Order{
 		Symbol:        MarketNameFor(market, wrapper),
 		Side:          "sell",

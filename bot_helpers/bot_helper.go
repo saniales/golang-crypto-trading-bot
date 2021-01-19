@@ -14,8 +14,6 @@ func InitExchange(exchangeConfig environment.ExchangeConfig, simulatedMode bool,
 
 	var exch exchanges.ExchangeWrapper
 	switch exchangeConfig.ExchangeName {
-	case "bittrex":
-		exch = exchanges.NewBittrexWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey, depositAddresses)
 	case "bittrexV2":
 		exch = exchanges.NewBittrexV2Wrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey, depositAddresses)
 	case "poloniex":

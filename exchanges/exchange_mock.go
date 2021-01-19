@@ -5,7 +5,7 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"github.com/shopspring/decimal"
 )
 
@@ -91,7 +91,7 @@ func (wrapper *ExchangeWrapperSimulator) BuyMarket(market *environment.Market, a
 	wrapper.balances[market.BaseCurrency] = baseBalance.Sub(expense)
 	wrapper.balances[market.MarketCurrency] = quoteBalance.Add(totalQuote)
 
-	orderFakeID, err := uuid.NewV4()
+	orderFakeID := uuid.NewV4()
 	if err != nil {
 		return "", errors.Annotate(err, "UUID Generation")
 	}
@@ -129,7 +129,7 @@ func (wrapper *ExchangeWrapperSimulator) SellMarket(market *environment.Market, 
 	wrapper.balances[market.BaseCurrency] = baseBalance.Add(gain)
 	wrapper.balances[market.MarketCurrency] = quoteBalance.Sub(totalQuote)
 
-	orderFakeID, err := uuid.NewV4()
+	orderFakeID := uuid.NewV4()
 	if err != nil {
 		return "", errors.Annotate(err, "UUID Generation")
 	}
