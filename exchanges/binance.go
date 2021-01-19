@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/adshao/go-binance"
+	"github.com/adshao/go-binance/v2"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
@@ -188,13 +188,13 @@ func (wrapper *BinanceWrapper) SellMarket(market *environment.Market, amount flo
 
 // GetTicker gets the updated ticker for a market.
 func (wrapper *BinanceWrapper) GetTicker(market *environment.Market) (*environment.Ticker, error) {
-	binanceTicker, err := wrapper.api.NewBookTickerService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
+	binanceTicker, err := wrapper.api.NewListBookTickersService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	ask, _ := decimal.NewFromString(binanceTicker.AskPrice)
-	bid, _ := decimal.NewFromString(binanceTicker.BidPrice)
+	ask, _ := decimal.NewFromString(binanceTicker[0].AskPrice)
+	bid, _ := decimal.NewFromString(binanceTicker[0].BidPrice)
 
 	return &environment.Ticker{
 		Last: ask, // TODO: find a better way for last value, if any
@@ -206,16 +206,16 @@ func (wrapper *BinanceWrapper) GetTicker(market *environment.Market) (*environme
 // GetMarketSummary gets the current market summary.
 func (wrapper *BinanceWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	if !wrapper.websocketOn {
-		binanceSummary, err := wrapper.api.NewPriceChangeStatsService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
+		binanceSummary, err := wrapper.api.NewListPriceChangeStatsService().Symbol(MarketNameFor(market, wrapper)).Do(context.Background())
 		if err != nil {
 			return nil, err
 		}
 
-		ask, _ := decimal.NewFromString(binanceSummary.AskPrice)
-		bid, _ := decimal.NewFromString(binanceSummary.BidPrice)
-		high, _ := decimal.NewFromString(binanceSummary.HighPrice)
-		low, _ := decimal.NewFromString(binanceSummary.LowPrice)
-		volume, _ := decimal.NewFromString(binanceSummary.Volume)
+		ask, _ := decimal.NewFromString(binanceSummary[0].AskPrice)
+		bid, _ := decimal.NewFromString(binanceSummary[0].BidPrice)
+		high, _ := decimal.NewFromString(binanceSummary[0].HighPrice)
+		low, _ := decimal.NewFromString(binanceSummary[0].LowPrice)
+		volume, _ := decimal.NewFromString(binanceSummary[0].Volume)
 
 		wrapper.summaries.Set(market, &environment.MarketSummary{
 			Last:   ask,
@@ -411,7 +411,7 @@ func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market
 
 // Withdraw performs a withdraw operation from the exchange to a destination address.
 func (wrapper *BinanceWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
-	err := wrapper.api.NewCreateWithdrawService().Address(destinationAddress).Asset(coinTicker).Amount(fmt.Sprint(amount)).Do(context.Background())
+	_, err := wrapper.api.NewCreateWithdrawService().Address(destinationAddress).Asset(coinTicker).Amount(fmt.Sprint(amount)).Do(context.Background())
 	if err != nil {
 		return err
 	}

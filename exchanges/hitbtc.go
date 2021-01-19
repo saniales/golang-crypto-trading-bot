@@ -18,8 +18,9 @@ package exchanges
 
 import (
 	"fmt"
-	"github.com/satori/go.uuid"
 	"sort"
+
+	"github.com/gofrs/uuid"
 
 	"github.com/juju/errors"
 	"github.com/saniales/go-hitbtc"

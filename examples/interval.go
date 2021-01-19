@@ -16,17 +16,18 @@
 package examples
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/nlopes/slack"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
 	"github.com/saniales/golang-crypto-trading-bot/strategies"
 	"github.com/shomali11/slacker"
 	"github.com/sirupsen/logrus"
+	"github.com/slack-go/slack"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -75,7 +76,7 @@ var SlackIntegrationExample = strategies.IntervalStrategy{
 				log.Println("Error during slack slackBot connection: ", err)
 			})
 			go func() {
-				err := slackBot.Listen()
+				err := slackBot.Listen(context.Background())
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -84,7 +85,7 @@ var SlackIntegrationExample = strategies.IntervalStrategy{
 		},
 		OnUpdate: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			//if updates has requirements
-			_, _, err := slackBot.Client.PostMessage("DESIRED-CHANNEL", "OMG something happening!!!!!", slack.PostMessageParameters{})
+			_, _, err := slackBot.Client().PostMessage("DESIRED-CHANNEL", slack.MsgOptionText("OMG something happening!!!!!", true))
 			return err
 		},
 		OnError: func(err error) {
