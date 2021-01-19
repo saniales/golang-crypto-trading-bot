@@ -21,6 +21,7 @@ import (
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
 
+	"github.com/toorop/go-bittrex"
 	api "github.com/toorop/go-bittrex"
 )
 
@@ -65,32 +66,30 @@ func (wrapper *BittrexWrapper) GetMarkets() ([]*environment.Market, error) {
 	}
 	wrappedMarkets := make([]*environment.Market, 0, len(bittrexMarkets))
 	for _, market := range bittrexMarkets {
-		if market.IsActive {
-			wrappedMarkets = append(wrappedMarkets, &environment.Market{
-				Name:           market.MarketName,
-				BaseCurrency:   market.BaseCurrency,
-				MarketCurrency: market.MarketCurrency,
-			})
-		}
+		wrappedMarkets = append(wrappedMarkets, &environment.Market{
+			Name:           market.Symbol,
+			BaseCurrency:   market.BaseCurrencySymbol,
+			MarketCurrency: market.QuoteCurrencySymbol,
+		})
 	}
 	return wrappedMarkets, nil
 }
 
 // GetOrderBook gets the order(ASK + BID) book of a market.
 func (wrapper *BittrexWrapper) GetOrderBook(market *environment.Market) (*environment.OrderBook, error) {
-	bittrexOrderBook, err := wrapper.api.GetOrderBook(MarketNameFor(market, wrapper), "both")
+	bittrexOrderBook, err := wrapper.api.GetOrderBook(MarketNameFor(market, wrapper), 5, "both")
 	if err != nil {
 		return nil, err
 	}
 
 	var orderBook environment.OrderBook
-	for _, order := range bittrexOrderBook.Buy {
+	for _, order := range bittrexOrderBook.Bid {
 		orderBook.Bids = append(orderBook.Bids, environment.Order{
 			Quantity: order.Quantity,
 			Value:    order.Rate,
 		})
 	}
-	for _, order := range bittrexOrderBook.Sell {
+	for _, order := range bittrexOrderBook.Ask {
 		orderBook.Asks = append(orderBook.Asks, environment.Order{
 			Quantity: order.Quantity,
 			Value:    order.Rate,
@@ -102,14 +101,30 @@ func (wrapper *BittrexWrapper) GetOrderBook(market *environment.Market) (*enviro
 
 // BuyLimit performs a limit buy action.
 func (wrapper *BittrexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.BuyLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
-	return orderNumber, err
+	orderNumber, err := wrapper.api.CreateOrder(bittrex.CreateOrderParams{
+		Type:         bittrex.LIMIT,
+		TimeInForce:  bittrex.GOOD_TIL_CANCELLED,
+		MarketSymbol: MarketNameFor(market, wrapper),
+		Quantity:     decimal.NewFromFloat(amount),
+		Limit:        decimal.NewFromFloat(limit),
+		Direction:    bittrex.BUY,
+	})
+
+	return orderNumber.ID, err
 }
 
 // SellLimit performs a limit sell action.
 func (wrapper *BittrexWrapper) SellLimit(market *environment.Market, amount float64, limit float64) (string, error) {
-	orderNumber, err := wrapper.api.SellLimit(MarketNameFor(market, wrapper), decimal.NewFromFloat(amount), decimal.NewFromFloat(limit))
-	return orderNumber, err
+	orderNumber, err := wrapper.api.CreateOrder(bittrex.CreateOrderParams{
+		Type:         bittrex.LIMIT,
+		TimeInForce:  bittrex.GOOD_TIL_CANCELLED,
+		MarketSymbol: MarketNameFor(market, wrapper),
+		Quantity:     decimal.NewFromFloat(amount),
+		Limit:        decimal.NewFromFloat(limit),
+		Direction:    bittrex.SELL,
+	})
+
+	return orderNumber.ID, err
 }
 
 // BuyMarket performs a market buy action.
@@ -130,28 +145,32 @@ func (wrapper *BittrexWrapper) GetTicker(market *environment.Market) (*environme
 	}
 
 	return &environment.Ticker{
-		Last: bittrexTicker.Last,
-		Bid:  bittrexTicker.Bid,
-		Ask:  bittrexTicker.Ask,
+		Last: bittrexTicker[0].LastTradeRate,
+		Bid:  bittrexTicker[0].BidRate,
+		Ask:  bittrexTicker[0].AskRate,
 	}, nil
 }
 
 // GetMarketSummary gets the current market summary.
 func (wrapper *BittrexWrapper) GetMarketSummary(market *environment.Market) (*environment.MarketSummary, error) {
 	if !wrapper.websocketOn {
-		summaryArray, err := wrapper.api.GetMarketSummary(MarketNameFor(market, wrapper))
+		summary, err := wrapper.api.GetMarketSummary(MarketNameFor(market, wrapper))
 		if err != nil {
 			return nil, err
 		}
-		summary := summaryArray[0]
+
+		ticker, err := wrapper.GetTicker(market)
+		if err != nil {
+			return nil, err
+		}
 
 		wrapper.summaries.Set(market, &environment.MarketSummary{
 			High:   summary.High,
 			Low:    summary.Low,
 			Volume: summary.Volume,
-			Bid:    summary.Bid,
-			Ask:    summary.Ask,
-			Last:   summary.Last,
+			Bid:    ticker.Bid,
+			Ask:    ticker.Ask,
+			Last:   ticker.Last,
 		})
 	}
 
@@ -229,7 +248,7 @@ func (wrapper *BittrexWrapper) subscribeMarketSummaryFeed(market *environment.Ma
 
 // Withdraw performs a withdraw operation from the exchange to a destination address.
 func (wrapper *BittrexWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
-	_, err := wrapper.api.Withdraw(destinationAddress, coinTicker, decimal.NewFromFloat(amount))
+	_, err := wrapper.api.Withdraw(destinationAddress, coinTicker, decimal.NewFromFloat(amount), "golang-crypto-trading-bot")
 	if err != nil {
 		return err
 	}

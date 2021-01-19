@@ -3,9 +3,9 @@ package exchanges
 import (
 	"fmt"
 
+	"github.com/gofrs/uuid"
 	"github.com/juju/errors"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
-	"github.com/satori/go.uuid"
 	"github.com/shopspring/decimal"
 )
 
