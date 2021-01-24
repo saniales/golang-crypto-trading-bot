@@ -60,15 +60,15 @@ func (wrapper *BinanceWrapper) String() string {
 
 // GetMarkets Gets all the markets info.
 func (wrapper *BinanceWrapper) GetMarkets() ([]*environment.Market, error) {
-	binanceMarkets, err := wrapper.api.NewExchangeInfoService().Do(context.Background())
+	binanceExchangeInfo, err := wrapper.api.NewExchangeInfoService().Do(context.Background())
 
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*environment.Market, len(binanceMarkets.Symbols))
+	ret := make([]*environment.Market, len(binanceExchangeInfo.Symbols))
 
-	for i, market := range binanceMarkets.Symbols {
+	for i, market := range binanceExchangeInfo.Symbols {
 		ret[i] = &environment.Market{
 			Name:           market.Symbol,
 			BaseCurrency:   market.BaseAsset,
