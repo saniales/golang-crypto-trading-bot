@@ -75,7 +75,7 @@ func (wrapper *BitfinexWrapper) GetOrderBook(market *environment.Market) (*envir
 		var orderBook environment.OrderBook
 		for _, order := range bitfinexOrderBook.Bids {
 			amount, _ := decimal.NewFromString(order.Amount)
-			rate, _ := decimal.NewFromString(order.Rate)
+			price, _ := decimal.NewFromString(order.Price)
 
 			ts, err := order.ParseTime()
 			if err != nil {
@@ -84,13 +84,13 @@ func (wrapper *BitfinexWrapper) GetOrderBook(market *environment.Market) (*envir
 
 			orderBook.Asks = append(orderBook.Asks, environment.Order{
 				Quantity:  amount,
-				Value:     rate,
+				Value:     price,
 				Timestamp: *ts,
 			})
 		}
 		for _, order := range bitfinexOrderBook.Asks {
 			amount, _ := decimal.NewFromString(order.Amount)
-			rate, _ := decimal.NewFromString(order.Rate)
+			price, _ := decimal.NewFromString(order.Price)
 
 			ts, err := order.ParseTime()
 			if err != nil {
@@ -99,7 +99,7 @@ func (wrapper *BitfinexWrapper) GetOrderBook(market *environment.Market) (*envir
 
 			orderBook.Bids = append(orderBook.Bids, environment.Order{
 				Quantity:  amount,
-				Value:     rate,
+				Value:     price,
 				Timestamp: *ts,
 			})
 		}
