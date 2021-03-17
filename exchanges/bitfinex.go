@@ -82,7 +82,7 @@ func (wrapper *BitfinexWrapper) GetOrderBook(market *environment.Market) (*envir
 				ts = new(time.Time)
 			}
 
-			orderBook.Asks = append(orderBook.Asks, environment.Order{
+			orderBook.Bids = append(orderBook.Bids, environment.Order{
 				Quantity:  amount,
 				Value:     price,
 				Timestamp: *ts,
@@ -97,7 +97,7 @@ func (wrapper *BitfinexWrapper) GetOrderBook(market *environment.Market) (*envir
 				ts = new(time.Time)
 			}
 
-			orderBook.Bids = append(orderBook.Bids, environment.Order{
+			orderBook.Asks = append(orderBook.Asks, environment.Order{
 				Quantity:  amount,
 				Value:     price,
 				Timestamp: *ts,
