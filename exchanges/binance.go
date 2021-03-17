@@ -135,7 +135,7 @@ func (wrapper *BinanceWrapper) orderbookFromREST(market *environment.Market) (*e
 			return nil, -1, err
 		}
 
-		orderBook.Bids = append(orderBook.Asks, environment.Order{
+		orderBook.Bids = append(orderBook.Bids, environment.Order{
 			Quantity: qty,
 			Value:    value,
 		})
