@@ -72,17 +72,17 @@ func (wrapper *ExchangeWrapperSimulator) BuyMarket(market *environment.Market, a
 	remainingAmount := decimal.NewFromFloat(amount)
 	expense := decimal.Zero
 
-	for _, bid := range orderbook.Bids {
-		if remainingAmount.LessThanOrEqual(bid.Quantity) {
+	for _, ask := range orderbook.Asks {
+		if remainingAmount.LessThanOrEqual(ask.Quantity) {
 			totalQuote = totalQuote.Add(remainingAmount)
-			expense = expense.Add(remainingAmount.Mul(bid.Value))
+			expense = expense.Add(remainingAmount.Mul(ask.Value))
 			if expense.GreaterThan(*baseBalance) {
 				return "", fmt.Errorf("cannot Buy not enough %s balance", market.BaseCurrency)
 			}
 			break
 		}
-		totalQuote = totalQuote.Add(bid.Quantity)
-		expense = expense.Add(bid.Quantity.Mul(bid.Value))
+		totalQuote = totalQuote.Add(ask.Quantity)
+		expense = expense.Add(bid.Quantity.Mul(ask.Value))
 		if expense.GreaterThan(*baseBalance) {
 			return "", fmt.Errorf("cannot Buy not enough %s balance", market.BaseCurrency)
 		}
@@ -116,14 +116,14 @@ func (wrapper *ExchangeWrapperSimulator) SellMarket(market *environment.Market, 
 		return "", fmt.Errorf("Cannot Sell: not enough %s balance", market.MarketCurrency)
 	}
 
-	for _, ask := range orderbook.Asks {
-		if remainingAmount.LessThanOrEqual(ask.Quantity) {
+	for _, bid := range orderbook.Bids {
+		if remainingAmount.LessThanOrEqual(bid.Quantity) {
 			totalQuote = totalQuote.Add(remainingAmount)
-			gain = gain.Add(remainingAmount.Mul(ask.Value))
+			gain = gain.Add(remainingAmount.Mul(bid.Value))
 			break
 		}
-		totalQuote = totalQuote.Add(ask.Quantity)
-		gain = gain.Add(ask.Quantity.Mul(ask.Value))
+		totalQuote = totalQuote.Add(bid.Quantity)
+		gain = gain.Add(ask.Quantity.Mul(bid.Value))
 	}
 
 	wrapper.balances[market.BaseCurrency] = baseBalance.Add(gain)
