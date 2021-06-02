@@ -10,12 +10,16 @@ require (
 	github.com/dgrr/fastws v1.0.3 // indirect
 	github.com/fatih/structs v1.1.0
 	github.com/fiore/kucoin-go v0.0.0-20190107105632-5a814c26befa
+	github.com/franela/goblin v0.0.0-20210519012713-85d372ac71e2 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/juju/errors v0.0.0-20200330140219-3fe23663418f
-	github.com/nlopes/slack v0.6.0
+	github.com/juju/testing v0.0.0-20210324180055-18c50b0c2098 // indirect
+	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
+	github.com/onsi/gomega v1.12.0 // indirect
 	github.com/pharrisee/poloniex-api v0.0.0-20200602104112-ce8fafd80b26
 	github.com/saniales/go-hitbtc v0.0.0-20190107211814-7468d66640dd
-	github.com/satori/go.uuid v1.2.0
+	github.com/sdcoffey/big v0.4.1 // indirect
+	github.com/sdcoffey/techan v0.12.0
 	github.com/shomali11/slacker v0.0.0-20201209125859-873a67578e50
 	github.com/shopspring/decimal v1.2.0
 	github.com/sirupsen/logrus v1.7.0

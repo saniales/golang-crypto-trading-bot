@@ -2,17 +2,20 @@ package exchanges
 
 import (
 	"fmt"
-
 	"github.com/gofrs/uuid"
 	"github.com/juju/errors"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
+	"log"
+	"os"
+	"time"
 )
 
 // ExchangeWrapperSimulator wraps another wrapper and returns simulated balances and orders.
 type ExchangeWrapperSimulator struct {
 	innerWrapper ExchangeWrapper
 	balances     map[string]decimal.Decimal
+	lastBuyPrice decimal.Decimal
 }
 
 // NewExchangeWrapperSimulator creates a new simulated wrapper from another wrapper and an initial balance.
@@ -72,24 +75,31 @@ func (wrapper *ExchangeWrapperSimulator) BuyMarket(market *environment.Market, a
 	remainingAmount := decimal.NewFromFloat(amount)
 	expense := decimal.Zero
 
-	for _, bid := range orderbook.Bids {
-		if remainingAmount.LessThanOrEqual(bid.Quantity) {
+	for _, ask := range orderbook.Asks {
+		if remainingAmount.LessThanOrEqual(ask.Quantity) {
 			totalQuote = totalQuote.Add(remainingAmount)
-			expense = expense.Add(remainingAmount.Mul(bid.Value))
+			expense = expense.Add(remainingAmount.Mul(ask.Value))
 			if expense.GreaterThan(*baseBalance) {
 				return "", fmt.Errorf("cannot Buy not enough %s balance", market.BaseCurrency)
 			}
 			break
 		}
-		totalQuote = totalQuote.Add(bid.Quantity)
-		expense = expense.Add(bid.Quantity.Mul(bid.Value))
+		totalQuote = totalQuote.Add(ask.Quantity)
+		expense = expense.Add(ask.Quantity.Mul(ask.Value))
 		if expense.GreaterThan(*baseBalance) {
 			return "", fmt.Errorf("cannot Buy not enough %s balance", market.BaseCurrency)
 		}
+		remainingAmount = remainingAmount.Sub(ask.Quantity)
 	}
 
+	wrapper.lastBuyPrice = wrapper.balances[market.BaseCurrency]
 	wrapper.balances[market.BaseCurrency] = baseBalance.Sub(expense)
 	wrapper.balances[market.MarketCurrency] = quoteBalance.Add(totalQuote)
+
+	avgPrice := expense.Div(totalQuote)
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("%s, %s, %s, %s, %s, %s, %s, %s, %s",
+		"", time.Now().Format(time.RFC3339), "","","","","", avgPrice, ""))
+	log.Println("BUY", totalQuote, avgPrice)
 
 	orderFakeID, err := uuid.NewV4()
 	if err != nil {
@@ -116,18 +126,24 @@ func (wrapper *ExchangeWrapperSimulator) SellMarket(market *environment.Market, 
 		return "", fmt.Errorf("Cannot Sell: not enough %s balance", market.MarketCurrency)
 	}
 
-	for _, ask := range orderbook.Asks {
-		if remainingAmount.LessThanOrEqual(ask.Quantity) {
+	for _, bid := range orderbook.Bids {
+		if remainingAmount.LessThanOrEqual(bid.Quantity) {
 			totalQuote = totalQuote.Add(remainingAmount)
-			gain = gain.Add(remainingAmount.Mul(ask.Value))
+			gain = gain.Add(remainingAmount.Mul(bid.Value))
 			break
 		}
-		totalQuote = totalQuote.Add(ask.Quantity)
-		gain = gain.Add(ask.Quantity.Mul(ask.Value))
+		totalQuote = totalQuote.Add(bid.Quantity)
+		gain = gain.Add(bid.Quantity.Mul(bid.Value))
+		remainingAmount = remainingAmount.Sub(bid.Quantity)
 	}
 
 	wrapper.balances[market.BaseCurrency] = baseBalance.Add(gain)
 	wrapper.balances[market.MarketCurrency] = quoteBalance.Sub(totalQuote)
+
+	avgPrice := gain.Div(totalQuote)
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("%s, %s, %s, %s, %s, %s, %s, %s, %s",
+		"", time.Now().Format(time.RFC3339), "","","","","", "",avgPrice, ))
+	log.Println("Sell", totalQuote, avgPrice,  "Profit", wrapper.balances[market.BaseCurrency].Sub(wrapper.lastBuyPrice), "total:", wrapper.balances[market.BaseCurrency])
 
 	orderFakeID, err := uuid.NewV4()
 	if err != nil {

@@ -15,8 +15,20 @@
 
 package main
 
-import "github.com/saniales/golang-crypto-trading-bot/cmd"
+import (
+	"github.com/saniales/golang-crypto-trading-bot/cmd"
+	"github.com/saniales/golang-crypto-trading-bot/strategies"
+	"github.com/saniales/golang-crypto-trading-bot/techanstrat"
+	"log"
+	"net/http"
+
+	_ "net/http/pprof"
+)
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+	strategies.AddCustomStrategy(techanstrat.Interval)
 	bot.Execute()
 }
