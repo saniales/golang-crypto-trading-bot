@@ -82,7 +82,7 @@ func (wrapper *ExchangeWrapperSimulator) BuyMarket(market *environment.Market, a
 			break
 		}
 		totalQuote = totalQuote.Add(ask.Quantity)
-		expense = expense.Add(bid.Quantity.Mul(ask.Value))
+		expense = expense.Add(ask.Quantity.Mul(ask.Value))
 		if expense.GreaterThan(*baseBalance) {
 			return "", fmt.Errorf("cannot Buy not enough %s balance", market.BaseCurrency)
 		}
@@ -123,7 +123,7 @@ func (wrapper *ExchangeWrapperSimulator) SellMarket(market *environment.Market, 
 			break
 		}
 		totalQuote = totalQuote.Add(bid.Quantity)
-		gain = gain.Add(ask.Quantity.Mul(bid.Value))
+		gain = gain.Add(bid.Quantity.Mul(bid.Value))
 	}
 
 	wrapper.balances[market.BaseCurrency] = baseBalance.Add(gain)
