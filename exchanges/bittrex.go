@@ -106,7 +106,7 @@ func (wrapper *BittrexWrapper) BuyLimit(market *environment.Market, amount float
 		TimeInForce:  bittrex.GOOD_TIL_CANCELLED,
 		MarketSymbol: MarketNameFor(market, wrapper),
 		Quantity:     decimal.NewFromFloat(amount),
-		Limit:        decimal.NewFromFloat(limit),
+		Limit:        limit,
 		Direction:    bittrex.BUY,
 	})
 
@@ -120,7 +120,7 @@ func (wrapper *BittrexWrapper) SellLimit(market *environment.Market, amount floa
 		TimeInForce:  bittrex.GOOD_TIL_CANCELLED,
 		MarketSymbol: MarketNameFor(market, wrapper),
 		Quantity:     decimal.NewFromFloat(amount),
-		Limit:        decimal.NewFromFloat(limit),
+		Limit:        limit,
 		Direction:    bittrex.SELL,
 	})
 

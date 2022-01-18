@@ -406,7 +406,7 @@ func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market
 
 // Withdraw performs a withdraw operation from the exchange to a destination address.
 func (wrapper *BinanceWrapper) Withdraw(destinationAddress string, coinTicker string, amount float64) error {
-	_, err := wrapper.api.NewCreateWithdrawService().Address(destinationAddress).Asset(coinTicker).Amount(fmt.Sprint(amount)).Do(context.Background())
+	_, err := wrapper.api.NewCreateWithdrawService().Address(destinationAddress).Coin(coinTicker).Amount(fmt.Sprint(amount)).Do(context.Background())
 	if err != nil {
 		return err
 	}

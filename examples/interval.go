@@ -68,7 +68,7 @@ var SlackIntegrationExample = strategies.IntervalStrategy{
 		Name: "SlackIntegrationExample",
 		Setup: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			// connect slack token
-			slackBot = slacker.NewClient("YOUR-TOKEN-HERE")
+			slackBot = slacker.NewClient("YOUR-BOT-TOKEN-HERE", "YOUR-APP-TOKEN-HERE")
 			slackBot.Init(func() {
 				log.Println("Slack BOT Connected")
 			})
