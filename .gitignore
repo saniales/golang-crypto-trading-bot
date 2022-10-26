@@ -29,3 +29,4 @@ golang-crypto-trading-bot
 .bot_config.yml
 
 .vscode
+.idea

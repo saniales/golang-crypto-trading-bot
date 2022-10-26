@@ -252,8 +252,9 @@ github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 h1:EGx4pi6eqNxGa
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
 github.com/gorilla/websocket v1.4.1/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
+github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grpc-ecosystem/grpc-gateway v1.16.0/go.mod h1:BDjrQk3hbvj6Nolgz8mAMFbcEtjT1g+wF4CSlocrBnw=
 github.com/hashicorp/consul/api v1.11.0/go.mod h1:XjsvQN+RJGWI2TWy1/kqaE16HrR2J/FWgkYjdZQsX9M=
 github.com/hashicorp/consul/sdk v0.8.0/go.mod h1:GBvyrGALthsZObzUGsfgHZQDXjg4lOjagTIwIR1vPms=
@@ -471,8 +472,6 @@ github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69
 github.com/tevino/abool v0.0.0-20170917061928-9b9efcf221b5/go.mod h1:f1SCnEOt6sc3fOJfPQDRDzHOtSXuTtnz0ImG9kPRDV0=
 github.com/thebotguys/golang-bittrex-api v0.0.0-20210125125813-27a8629619aa h1:R5ZChRoesF7ZhKuPZI8woA8SxrEi+08s31V9yh9bgME=
 github.com/thebotguys/golang-bittrex-api v0.0.0-20210125125813-27a8629619aa/go.mod h1:natsuUbyVzQlorUhik2TKpleXCsr8n3VODXhilG1zrI=
-github.com/thebotguys/signalr v0.0.0-20190119054324-787ebe6729fc h1:fc58Le/8rVCU8jwXUot9i9lkWkEnL0YGI/WLrbXmTWw=
-github.com/thebotguys/signalr v0.0.0-20190119054324-787ebe6729fc/go.mod h1:Vjxf5A2hvYlxWvXYlkXUNmlmWspXKKt7YpQ4O3XEd4w=
 github.com/toorop/go-bittrex v0.0.4 h1:Ih/vPN+0xpktK5s1CHAK8esVbgrJI1neWkqo0HJWmcI=
 github.com/toorop/go-bittrex v0.0.4/go.mod h1:u88AINjoE15/DDALh2+s7JX+ILX3yb9rdXtZzBxd0hI=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
