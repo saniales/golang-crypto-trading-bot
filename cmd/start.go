@@ -17,7 +17,7 @@ package bot
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -50,7 +50,7 @@ func initConfigs() error {
 	if err != nil {
 		return err
 	}
-	contentToMarshal, err := ioutil.ReadAll(configFile)
+	contentToMarshal, err := io.ReadAll(configFile)
 	if err != nil {
 		return err
 	}
