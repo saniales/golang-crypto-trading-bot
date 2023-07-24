@@ -17,7 +17,7 @@ package bot
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -47,7 +47,7 @@ func executeInitCommand(cmd *cobra.Command, args []string) {
 func initConfig() {
 	if initFlags.ConfigFile != "" {
 		//try first to unmarshal the file to check if it is correct format.
-		content, err := ioutil.ReadFile(initFlags.ConfigFile)
+		content, err := os.ReadFile(initFlags.ConfigFile)
 		if err != nil {
 			fmt.Print("Error while opening the config file provided")
 			if GlobalFlags.Verbose > 0 {
@@ -66,7 +66,7 @@ func initConfig() {
 			fmt.Println()
 			return
 		}
-		err = ioutil.WriteFile("./.bot_config.yml", content, 0666)
+		err = os.WriteFile("./.bot_config.yml", content, 0666)
 		if err != nil {
 			fmt.Print("Cannot write new configuration file")
 			if GlobalFlags.Verbose > 0 {
@@ -190,7 +190,7 @@ func generateInitFile() {
 		fmt.Scanln(&YesNo)
 	}
 	if YesNo == "Y" {
-		err := ioutil.WriteFile("./.gobot", contentToBeWritten, 0666)
+		err := os.WriteFile("./.gobot", contentToBeWritten, 0666)
 		if err != nil {
 			fmt.Print("Error while writing content to new config file")
 			if GlobalFlags.Verbose > 0 {
