@@ -105,6 +105,23 @@ strategies:
           market_name: ETCBTC
 ```
 
+## Docker
+
+To build a docker image:
+
+```shell
+git clone git@github.com:saniales/golang-crypto-trading-bot.git
+cd golang-crypto-trading-bot
+docker build -f Dockerfile -t golang-crypto-trading-bot .
+```
+
+To run a bot you should provide a configuration file from host machine (you should have a `config.yaml` in current
+directory):
+
+```shell 
+docker run -it --rm -v $(pwd)/config.yaml:/app/config.yaml:ro golang-crypto-trading-bot 
+```
+
 ## Donate
 
 Feel free to donate:
