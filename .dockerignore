@@ -1,0 +1,10 @@
+*
+
+!bot_helpers
+!cmd
+!environment
+!exchanges
+!strategies
+!go.mod
+!go.sum
+!main.go
