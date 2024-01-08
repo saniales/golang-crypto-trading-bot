@@ -85,7 +85,7 @@ var SlackIntegrationExample = strategies.IntervalStrategy{
 		},
 		OnUpdate: func([]exchanges.ExchangeWrapper, []*environment.Market) error {
 			//if updates has requirements
-			_, _, err := slackBot.Client().PostMessage("DESIRED-CHANNEL", slack.MsgOptionText("OMG something happening!!!!!", true))
+			_, _, err := slackBot.APIClient().PostMessage("DESIRED-CHANNEL", slack.MsgOptionText("OMG something happening!!!!!", true))
 			return err
 		},
 		OnError: func(err error) {
