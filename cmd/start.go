@@ -88,9 +88,11 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 			}
 
 			mkts[i].ExchangeNames = make(map[string]string, len(wrappers))
+			mkts[i].ExchangeTimeFrames = make(map[string]string, len(wrappers))
 
 			for _, exName := range mkt.Exchanges {
 				mkts[i].ExchangeNames[exName.Name] = exName.MarketName
+				mkts[i].ExchangeTimeFrames[exName.Name] = exName.TimeFrame
 			}
 		}
 		err := strategies.MatchWithMarkets(strategyConf.Strategy, mkts)

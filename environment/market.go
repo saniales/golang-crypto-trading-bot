@@ -32,10 +32,11 @@ type Ticker struct {
 
 //Market represents the environment the bot is trading in.
 type Market struct {
-	Name           string            `json:"name,required"`            //Represents the name of the market as defined in general (e.g. ETH-BTC).
-	BaseCurrency   string            `json:"baseCurrency,omitempty"`   //Represents the base currency of the market.
-	MarketCurrency string            `json:"marketCurrency,omitempty"` //Represents the currency to exchange by using base currency.
-	ExchangeNames  map[string]string `json:"-"`                        // Represents the various names of the market on various exchanges.
+	Name               string            `json:"name,required"`            //Represents the name of the market as defined in general (e.g. ETH-BTC).
+	BaseCurrency       string            `json:"baseCurrency,omitempty"`   //Represents the base currency of the market.
+	MarketCurrency     string            `json:"marketCurrency,omitempty"` //Represents the currency to exchange by using base currency.
+	ExchangeNames      map[string]string `json:"-"`                        // Represents the various names of the market on various exchanges.
+	ExchangeTimeFrames map[string]string `json:"timeFrame,omitempty"`      // Represents the timeframe to retrieve candles on various exchanges
 }
 
 func (m Market) String() string {
