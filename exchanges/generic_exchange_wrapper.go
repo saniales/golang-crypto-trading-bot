@@ -17,7 +17,6 @@ package exchanges
 
 import (
 	"errors"
-
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
 )
@@ -32,7 +31,7 @@ const (
 	MakerTrade = "maker"
 )
 
-//ExchangeWrapper provides a generic wrapper for exchange services.
+// ExchangeWrapper provides a generic wrapper for exchange services.
 type ExchangeWrapper interface {
 	Name() string                                                                    // Gets the name of the exchange.
 	GetCandles(market *environment.Market) ([]environment.CandleStick, error)        // Gets the candle data from the exchange.
@@ -63,4 +62,9 @@ var ErrWebsocketNotSupported = errors.New("Cannot use websocket: exchange does n
 // MarketNameFor gets the market name as seen by the exchange.
 func MarketNameFor(m *environment.Market, wrapper ExchangeWrapper) string {
 	return m.ExchangeNames[wrapper.Name()]
+}
+
+// MarketTimeFrameFor gets the market timeframe
+func MarketTimeFrameFor(m *environment.Market, wrapper ExchangeWrapper) string {
+	return m.ExchangeTimeFrames[wrapper.Name()]
 }

@@ -46,6 +46,7 @@ type MarketConfig struct {
 type ExchangeBindingsConfig struct {
 	Name       string `yaml:"exchange"`    // Represents the name of the exchange.
 	MarketName string `yaml:"market_name"` // Represents the name of the market as seen from the exchange.
+	TimeFrame  string `yaml:"time_frame"`
 }
 
 // BotConfig contains all config data of the bot, which can be also loaded from config file.
