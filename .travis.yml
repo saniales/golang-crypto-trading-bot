@@ -1,7 +1,0 @@
-language: go
-
-go:
-  - "1.11"
-
-before_install: go get -t ./...
-go_import_path: github.com/saniales/golang-crypto-trading-bot
