@@ -28,6 +28,8 @@ func InitExchange(exchangeConfig environment.ExchangeConfig, simulatedMode bool,
 		exch = exchanges.NewHitBtcV2Wrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey, depositAddresses)
 	case "kucoin":
 		exch = exchanges.NewKucoinWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey, depositAddresses)
+	case "coinbase", "coinbasepro":
+		exch = exchanges.NewCoinbaseWrapper(exchangeConfig.PublicKey, exchangeConfig.SecretKey, depositAddresses, exchangeConfig.Passphrase)
 	default:
 		return nil
 	}

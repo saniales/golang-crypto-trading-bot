@@ -26,6 +26,7 @@ type ExchangeConfig struct {
 	ExchangeName     string                     `yaml:"exchange"`          // Represents the exchange name.
 	PublicKey        string                     `yaml:"public_key"`        // Represents the public key used to connect to Exchange API.
 	SecretKey        string                     `yaml:"secret_key"`        // Represents the secret key used to connect to Exchange API.
+	Passphrase       string                     `yaml:"passphrase"`        // Represents the passphrase used by exchanges that require it.
 	DepositAddresses map[string]string          `yaml:"deposit_addresses"` // Represents the bindings between coins and deposit address on the exchange.
 	FakeBalances     map[string]decimal.Decimal `yaml:"fake_balances"`     // Used only in simulation mode, fake starting balance [coin:balance].
 }
