@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -114,6 +115,15 @@ func (wrapper *BitfinexWrapper) GetOrderBook(market *environment.Market) (*envir
 	}
 
 	return orderbook, nil
+}
+
+// CancelOrder cancels an order by its exchange order ID.
+func (wrapper *BitfinexWrapper) CancelOrder(market *environment.Market, orderID string) error {
+	id, err := strconv.ParseInt(orderID, 10, 64)
+	if err != nil || id <= 0 {
+		return fmt.Errorf("invalid order ID %q", orderID)
+	}
+	return wrapper.api.Orders.Cancel(id)
 }
 
 // BuyLimit performs a limit buy action.
@@ -243,7 +253,7 @@ func (wrapper *BitfinexWrapper) GetDepositAddress(coinTicker string) (string, bo
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
-//     NOTE: In Bitfinex fees are currently hardcoded.
+//	NOTE: In Bitfinex fees are currently hardcoded.
 func (wrapper *BitfinexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {

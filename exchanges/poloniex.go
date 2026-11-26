@@ -18,6 +18,7 @@ package exchanges
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/shopspring/decimal"
@@ -132,6 +133,22 @@ func (wrapper *PoloniexWrapper) GetOrderBook(market *environment.Market) (*envir
 	return &orderBook, nil
 }
 
+// CancelOrder cancels an order by its exchange order ID.
+func (wrapper *PoloniexWrapper) CancelOrder(market *environment.Market, orderID string) error {
+	id, err := strconv.ParseInt(orderID, 10, 64)
+	if err != nil || id <= 0 {
+		return fmt.Errorf("invalid order ID %q", orderID)
+	}
+	success, err := wrapper.api.CancelOrder(id)
+	if err != nil {
+		return err
+	}
+	if !success {
+		return errors.New("order was not canceled")
+	}
+	return nil
+}
+
 // BuyLimit performs a limit buy action.
 func (wrapper *PoloniexWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.Buy(MarketNameFor(market, wrapper), amount, limit)
@@ -226,7 +243,7 @@ func (wrapper *PoloniexWrapper) GetDepositAddress(coinTicker string) (string, bo
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
-//     NOTE: In Binance fees are currently hardcoded.
+//	NOTE: In Binance fees are currently hardcoded.
 func (wrapper *PoloniexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	// NOTE: possibility to use wrapper FeesInfo function.
 	var feePercentage float64

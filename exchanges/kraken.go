@@ -18,6 +18,7 @@ package exchanges
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/beldur/kraken-go-api-client"
@@ -109,6 +110,24 @@ func (wrapper *KrakenWrapper) GetOrderBook(market *environment.Market) (*environ
 	}
 
 	return &orderBook, nil
+}
+
+// CancelOrder cancels a single transaction ID returned by a placement method.
+func (wrapper *KrakenWrapper) CancelOrder(market *environment.Market, orderID string) error {
+	if strings.HasPrefix(orderID, "[") && strings.HasSuffix(orderID, "]") {
+		orderID = orderID[1 : len(orderID)-1]
+	}
+	if orderID == "" || strings.ContainsAny(orderID, " \t\r\n,[]") {
+		return errors.New("expected a single order ID")
+	}
+	result, err := wrapper.api.CancelOrder(orderID)
+	if err != nil {
+		return err
+	}
+	if result == nil || result.Count == 0 {
+		return errors.New("order was not canceled")
+	}
+	return nil
 }
 
 // BuyLimit performs a limit buy action.
@@ -281,7 +300,7 @@ func (wrapper *KrakenWrapper) GetDepositAddress(coinTicker string) (string, bool
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
-//     NOTE: In Kraken fees are currently hardcoded.
+//	NOTE: In Kraken fees are currently hardcoded.
 func (wrapper *KrakenWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {

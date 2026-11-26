@@ -144,6 +144,15 @@ func (wrapper *BinanceWrapper) orderbookFromREST(market *environment.Market) (*e
 	return &orderBook, binanceOrderBook.LastUpdateID, nil
 }
 
+// CancelOrder cancels an order by its client order ID.
+func (wrapper *BinanceWrapper) CancelOrder(market *environment.Market, orderID string) error {
+	if orderID == "" {
+		return errors.New("order ID is required")
+	}
+	_, err := wrapper.api.NewCancelOrderService().Symbol(MarketNameFor(market, wrapper)).OrigClientOrderID(orderID).Do(context.Background())
+	return err
+}
+
 // BuyLimit performs a limit buy action.
 func (wrapper *BinanceWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	orderNumber, err := wrapper.api.NewCreateOrderService().Type(binance.OrderTypeLimit).Side(binance.SideTypeBuy).Symbol(MarketNameFor(market, wrapper)).Price(fmt.Sprint(limit)).Quantity(fmt.Sprint(amount)).Do(context.Background())
@@ -298,7 +307,7 @@ func (wrapper *BinanceWrapper) GetDepositAddress(coinTicker string) (string, boo
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
-//     NOTE: In Binance fees are currently hardcoded.
+//	NOTE: In Binance fees are currently hardcoded.
 func (wrapper *BinanceWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {
