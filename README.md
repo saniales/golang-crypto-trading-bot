@@ -33,6 +33,32 @@ func main() {
 
 For strategy reference see the [Godoc documentation](https://godoc.org/github.com/saniales/golang-crypto-trading-bot).
 
+## External logging
+
+Applications embedding the bot can attach a logger before calling `Execute`:
+
+```go
+import (
+    "log/slog"
+    "os"
+
+    bot "github.com/saniales/golang-crypto-trading-bot/cmd"
+)
+
+func main() {
+    bot.SetLogger(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
+    bot.Execute()
+}
+```
+
+`SetLogger` accepts any concurrency-safe implementation of the `logging.Logger`
+interface (`Info` and `Error` methods with slog-style key/value arguments).
+For example, use a `slog` handler that exports to OpenTelemetry, or adapt another
+logger to the interface. Bot lifecycle, strategy failures and exchange feed
+errors are logged; interactive CLI output and custom strategy logging remain
+the responsibility of the application. Passing `nil` restores the default
+Logrus logger. Do not include credentials in custom log messages or attributes.
+
 ## Simulation Mode
 
 If enabled, the bot will do paper trading, as it will execute fake orders in a sandbox environment.

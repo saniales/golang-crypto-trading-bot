@@ -5,11 +5,12 @@ import (
 
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
+	"github.com/saniales/golang-crypto-trading-bot/logging"
 )
 
 // WebsocketStrategy polls data from a websocket in real-time.
 //
-//     NOTE: The update function must be handled in the websocket strategy-model.
+//	NOTE: The update function must be handled in the websocket strategy-model.
 type WebsocketStrategy struct {
 	Model StrategyModel
 }
@@ -35,6 +36,9 @@ func (wss WebsocketStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets
 
 	if hasSetupFunc {
 		err = wss.Model.Setup(wrappers, markets)
+		if err != nil {
+			logging.Error("Strategy setup failed", "strategy", wss.Name(), "error", err)
+		}
 		if err != nil && hasErrorFunc {
 			wss.Model.OnError(err)
 		}
@@ -43,6 +47,7 @@ func (wss WebsocketStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets
 	// update is handled by the developer externally, here we just checked for existence.
 	if !hasUpdateFunc {
 		_err := errors.New("OnUpdate func cannot be empty")
+		logging.Error("Strategy update unavailable", "strategy", wss.Name(), "error", _err)
 		if hasErrorFunc {
 			wss.Model.OnError(_err)
 		} else {
@@ -52,6 +57,9 @@ func (wss WebsocketStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets
 
 	if hasTearDownFunc {
 		err = wss.Model.TearDown(wrappers, markets)
+		if err != nil {
+			logging.Error("Strategy teardown failed", "strategy", wss.Name(), "error", err)
+		}
 		if err != nil && hasErrorFunc {
 			wss.Model.OnError(err)
 		}

@@ -22,8 +22,8 @@ import (
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
+	"github.com/saniales/golang-crypto-trading-bot/logging"
 	"github.com/shopspring/decimal"
-	"github.com/sirupsen/logrus"
 )
 
 // BinanceWrapper represents the wrapper for the Binance exchange.
@@ -298,7 +298,7 @@ func (wrapper *BinanceWrapper) GetDepositAddress(coinTicker string) (string, boo
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
-//     NOTE: In Binance fees are currently hardcoded.
+//	NOTE: In Binance fees are currently hardcoded.
 func (wrapper *BinanceWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {
@@ -361,7 +361,7 @@ func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market
 		for {
 			_, lastUpdateID, err := wrapper.orderbookFromREST(market)
 			if err != nil {
-				logrus.Error(err)
+				logging.Error("Binance order book request failed", "error", err)
 				return
 			}
 			// 24 hours max
@@ -399,7 +399,7 @@ func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market
 
 				wrapper.orderbook.Set(market, &orderbook)
 			}, func(err error) {
-				logrus.Error(err)
+				logging.Error("Binance order book feed failed", "error", err)
 			})
 
 			<-done

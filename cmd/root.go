@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/saniales/golang-crypto-trading-bot/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -36,6 +37,11 @@ var RootCmd = &cobra.Command{
 }
 
 var signals chan os.Signal
+
+// SetLogger attaches an operational logger to the bot. Passing nil restores the default.
+func SetLogger(logger logging.Logger) {
+	logging.SetLogger(logger)
+}
 
 // Execute adds all child commands to the root command sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.

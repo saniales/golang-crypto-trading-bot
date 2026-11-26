@@ -21,6 +21,7 @@ import (
 
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
+	"github.com/saniales/golang-crypto-trading-bot/logging"
 )
 
 var available map[string]Strategy //mapped name -> strategy
@@ -34,10 +35,10 @@ type Strategy interface {
 
 // StrategyFunc represents a standard function binded to a strategy model execution.
 //
-//     Can define a Setup, TearDown and Update behaviour.
+//	Can define a Setup, TearDown and Update behaviour.
 type StrategyFunc func([]exchanges.ExchangeWrapper, []*environment.Market) error
 
-//StrategyModel represents a strategy model used by strategies.
+// StrategyModel represents a strategy model used by strategies.
 type StrategyModel struct {
 	Name     string
 	Setup    StrategyFunc
@@ -54,6 +55,8 @@ type Tactic struct {
 
 // Execute executes effectively a tactic.
 func (t *Tactic) Execute(wrappers []exchanges.ExchangeWrapper) {
+	logging.Info("Starting strategy", "strategy", t.Strategy.Name())
+	defer logging.Info("Strategy stopped", "strategy", t.Strategy.Name())
 	t.Strategy.Apply(wrappers, t.Markets)
 }
 
