@@ -60,6 +60,7 @@ func init() {
 		signal.Stop(signals)
 		fmt.Println()
 		fmt.Println("CTRL-C command received. Exiting...")
+		logging.Info("Interrupt received; exiting")
 		os.Exit(0)
 	}()
 

@@ -57,7 +57,9 @@ For example, use a `slog` handler that exports to OpenTelemetry, or adapt anothe
 logger to the interface. Bot lifecycle, strategy failures and exchange feed
 errors are logged; interactive CLI output and custom strategy logging remain
 the responsibility of the application. Passing `nil` restores the default
-Logrus logger. Do not include credentials in custom log messages or attributes.
+Logrus logger. Interrupts are logged before the process exits, rather than as
+normal bot or strategy stop events. Do not include credentials in custom log
+messages or attributes.
 
 ## Simulation Mode
 

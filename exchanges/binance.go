@@ -349,7 +349,9 @@ func (wrapper *BinanceWrapper) subscribeMarketSummaryFeed(market *environment.Ma
 			Last:   last,
 			Volume: volume,
 		})
-	}, func(error) {})
+	}, func(err error) {
+		logging.Error("Binance market summary feed failed", "error", err)
+	})
 	if err != nil {
 		return err
 	}
@@ -367,7 +369,7 @@ func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market
 			// 24 hours max
 			currentUpdateID := lastUpdateID
 
-			done, _, _ := binance.WsPartialDepthServe(MarketNameFor(market, wrapper), "20", func(event *binance.WsPartialDepthEvent) {
+			done, _, err := binance.WsPartialDepthServe(MarketNameFor(market, wrapper), "20", func(event *binance.WsPartialDepthEvent) {
 				if event.LastUpdateID <= currentUpdateID { // this update is more recent than the latest fetched
 					return
 				}
@@ -402,6 +404,10 @@ func (wrapper *BinanceWrapper) subscribeOrderbookFeed(market *environment.Market
 				logging.Error("Binance order book feed failed", "error", err)
 			})
 
+			if err != nil {
+				logging.Error("Binance order book feed connection failed", "error", err)
+				return
+			}
 			<-done
 		}
 	}()
