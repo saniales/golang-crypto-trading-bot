@@ -119,6 +119,11 @@ func (wrapper *HitBtcWrapperV2) GetOrderBook(market *environment.Market) (*envir
 	return ret, nil
 }
 
+// CancelOrder reports that single-order cancellation is unavailable in the client.
+func (wrapper *HitBtcWrapperV2) CancelOrder(market *environment.Market, orderID string) error {
+	return ErrCancelOrderNotSupported
+}
+
 // BuyLimit performs a limit buy action.
 func (wrapper *HitBtcWrapperV2) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 

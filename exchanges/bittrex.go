@@ -18,6 +18,7 @@ package exchanges
 import (
 	"errors"
 
+	"github.com/gofrs/uuid"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/shopspring/decimal"
 
@@ -97,6 +98,15 @@ func (wrapper *BittrexWrapper) GetOrderBook(market *environment.Market) (*enviro
 	}
 
 	return &orderBook, nil
+}
+
+// CancelOrder cancels an order by its exchange order ID.
+func (wrapper *BittrexWrapper) CancelOrder(market *environment.Market, orderID string) error {
+	if _, err := uuid.FromString(orderID); err != nil {
+		return err
+	}
+	_, err := wrapper.api.CancelOrder(orderID)
+	return err
 }
 
 // BuyLimit performs a limit buy action.
@@ -182,7 +192,7 @@ func (wrapper *BittrexWrapper) GetMarketSummary(market *environment.Market) (*en
 	return val, nil
 }
 
-//convertFromBittrexCandle converts a bittrex candle to a environment.CandleStick.
+// convertFromBittrexCandle converts a bittrex candle to a environment.CandleStick.
 func convertFromBittrexCandle(candle api.Candle) environment.CandleStick {
 	return environment.CandleStick{
 		High:  candle.High,
@@ -215,7 +225,7 @@ func (wrapper *BittrexWrapper) GetDepositAddress(coinTicker string) (string, boo
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
-//     NOTE: In Bittrex fees are hardcoded due to the inability to obtain them via API before placing an order.
+//	NOTE: In Bittrex fees are hardcoded due to the inability to obtain them via API before placing an order.
 func (wrapper *BittrexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {
@@ -241,7 +251,7 @@ func (wrapper *BittrexWrapper) FeedConnect(markets []*environment.Market) error 
 
 // SubscribeMarketSummaryFeed subscribes to the Market Summary Feed service.
 //
-//     NOTE: Not supported on Bittrex v1 API, use *BittrexWrapperV2.
+//	NOTE: Not supported on Bittrex v1 API, use *BittrexWrapperV2.
 func (wrapper *BittrexWrapper) subscribeMarketSummaryFeed(market *environment.Market) {
 	panic(ErrWebsocketNotSupported)
 }

@@ -42,6 +42,7 @@ type ExchangeWrapper interface {
 	SellLimit(market *environment.Market, amount float64, limit float64) (string, error) // Performs a limit sell action.
 	BuyMarket(market *environment.Market, amount float64) (string, error)                // Performs a market buy action.
 	SellMarket(market *environment.Market, amount float64) (string, error)               // Performs a market sell action.
+	CancelOrder(market *environment.Market, orderID string) error                        // Cancels the order identified by a placement method.
 
 	CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 // Calculates the trading fees for an order on a specified market.
 	CalculateWithdrawFees(market *environment.Market, amount float64) float64                                    // Calculates the withdrawal fees on a specified market.
@@ -58,6 +59,9 @@ type ExchangeWrapper interface {
 
 // ErrWebsocketNotSupported is the error representing when an exchange does not support websocket.
 var ErrWebsocketNotSupported = errors.New("Cannot use websocket: exchange does not support it")
+
+// ErrCancelOrderNotSupported indicates that single-order cancellation is unavailable.
+var ErrCancelOrderNotSupported = errors.New("single-order cancellation is not supported")
 
 // MarketNameFor gets the market name as seen by the exchange.
 func MarketNameFor(m *environment.Market, wrapper ExchangeWrapper) string {

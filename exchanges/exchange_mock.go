@@ -48,6 +48,11 @@ func (wrapper *ExchangeWrapperSimulator) GetOrderBook(market *environment.Market
 	return wrapper.innerWrapper.GetOrderBook(market)
 }
 
+// CancelOrder reports that simulated market orders are already filled.
+func (wrapper *ExchangeWrapperSimulator) CancelOrder(market *environment.Market, orderID string) error {
+	return errors.New("no simulated open orders to cancel")
+}
+
 // BuyLimit here is just to implement the ExchangeWrapper Interface, do not use, use BuyMarket instead.
 func (wrapper *ExchangeWrapperSimulator) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	return "", errors.New("BuyLimit operation is not mockable")

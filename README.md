@@ -33,6 +33,16 @@ func main() {
 
 For strategy reference see the [Godoc documentation](https://godoc.org/github.com/saniales/golang-crypto-trading-bot).
 
+Strategies can cancel an open order with `wrapper.CancelOrder(market, orderID)`,
+using the ID returned by the order placement method. Cancellation errors are
+returned to the caller, including when an order is no longer open. The HitBTC
+and KuCoin clients and the unimplemented Bittrex V2 wrapper cannot safely cancel
+individual orders and return `exchanges.ErrCancelOrderNotSupported`. In
+simulation mode, market orders are filled immediately and limit orders are not
+simulated, so there are no open simulated orders to cancel. Kraken placement
+IDs may contain multiple transaction IDs; cancel each ID separately if that
+occurs.
+
 ## Simulation Mode
 
 If enabled, the bot will do paper trading, as it will execute fake orders in a sandbox environment.

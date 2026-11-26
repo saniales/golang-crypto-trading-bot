@@ -117,6 +117,11 @@ func (wrapper *KucoinWrapper) GetOrderBook(market *environment.Market) (*environ
 	return ret, nil
 }
 
+// CancelOrder reports that the client cannot reliably report cancellation failures.
+func (wrapper *KucoinWrapper) CancelOrder(market *environment.Market, orderID string) error {
+	return ErrCancelOrderNotSupported
+}
+
 // BuyLimit performs a limit buy action.
 func (wrapper *KucoinWrapper) BuyLimit(market *environment.Market, amount, limit float64) (string, error) {
 	orderOid, err := wrapper.api.CreateOrder(MarketNameFor(market, wrapper), "BUY", limit, amount)

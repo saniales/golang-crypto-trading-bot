@@ -74,6 +74,11 @@ func (wrapper *BittrexWrapperV2) GetOrderBook(market *environment.Market) (*envi
 	panic("GetOrderBook not implemented")
 }
 
+// CancelOrder reports that cancellation is not implemented.
+func (wrapper *BittrexWrapperV2) CancelOrder(market *environment.Market, orderID string) error {
+	return ErrCancelOrderNotSupported
+}
+
 // BuyLimit performs a limit buy action.
 func (wrapper *BittrexWrapperV2) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {
 	return "", errors.New("BuyLimit not implemented")
@@ -150,7 +155,7 @@ func (wrapper *BittrexWrapperV2) GetDepositAddress(coinTicker string) (string, b
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
-//     NOTE: In Bittrex fees are hardcoded due to the inability to obtain them via API before placing an order.
+//	NOTE: In Bittrex fees are hardcoded due to the inability to obtain them via API before placing an order.
 func (wrapper *BittrexWrapperV2) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {
@@ -171,7 +176,7 @@ func (wrapper *BittrexWrapperV2) CalculateWithdrawFees(market *environment.Marke
 
 // FeedConnect connects to the feed of the exchange.
 //
-//     NOTE: Not supported on Bittrex v1 API, use *BittrexWrapperV2.
+//	NOTE: Not supported on Bittrex v1 API, use *BittrexWrapperV2.
 func (wrapper *BittrexWrapperV2) FeedConnect(markets []*environment.Market) error {
 	return ErrWebsocketNotSupported
 }
