@@ -18,6 +18,7 @@ package exchanges
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -117,7 +118,7 @@ func (wrapper *KrakenWrapper) CancelOrder(market *environment.Market, orderID st
 	if strings.HasPrefix(orderID, "[") && strings.HasSuffix(orderID, "]") {
 		orderID = orderID[1 : len(orderID)-1]
 	}
-	if orderID == "" || strings.ContainsAny(orderID, " \t\r\n,[]") {
+	if !krakenOrderIDPattern.MatchString(orderID) {
 		return errors.New("expected a single order ID")
 	}
 	result, err := wrapper.api.CancelOrder(orderID)
@@ -129,6 +130,8 @@ func (wrapper *KrakenWrapper) CancelOrder(market *environment.Market, orderID st
 	}
 	return nil
 }
+
+var krakenOrderIDPattern = regexp.MustCompile(`^O[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{6}$`)
 
 // BuyLimit performs a limit buy action.
 func (wrapper *KrakenWrapper) BuyLimit(market *environment.Market, amount float64, limit float64) (string, error) {

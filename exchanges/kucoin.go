@@ -117,27 +117,9 @@ func (wrapper *KucoinWrapper) GetOrderBook(market *environment.Market) (*environ
 	return ret, nil
 }
 
-// CancelOrder finds the order side and cancels the matching active order.
+// CancelOrder reports that the client cannot reliably report cancellation failures.
 func (wrapper *KucoinWrapper) CancelOrder(market *environment.Market, orderID string) error {
-	if orderID == "" {
-		return errors.New("order ID is required")
-	}
-	symbol := MarketNameFor(market, wrapper)
-	orders, err := wrapper.api.ListActiveMapOrders(symbol, "")
-	if err != nil {
-		return err
-	}
-	for _, order := range orders.BUY {
-		if order.Oid == orderID {
-			return wrapper.api.CancelOrder(symbol, orderID, "BUY")
-		}
-	}
-	for _, order := range orders.SELL {
-		if order.Oid == orderID {
-			return wrapper.api.CancelOrder(symbol, orderID, "SELL")
-		}
-	}
-	return fmt.Errorf("active order %q not found", orderID)
+	return ErrCancelOrderNotSupported
 }
 
 // BuyLimit performs a limit buy action.

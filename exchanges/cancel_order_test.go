@@ -10,7 +10,6 @@ import (
 
 	"github.com/adshao/go-binance/v2"
 	krakenapi "github.com/beldur/kraken-go-api-client"
-	"github.com/fiore/kucoin-go"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 )
 
@@ -79,7 +78,7 @@ func TestKrakenCancelOrder(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if form.Get("txid") != "transaction-id" {
+		if form.Get("txid") != "OABC23-DEF45-GHI789" {
 			t.Errorf("unexpected txid: %q", form.Get("txid"))
 		}
 		if count == 0 {
@@ -88,63 +87,22 @@ func TestKrakenCancelOrder(t *testing.T) {
 		return jsonResponse(`{"error":[],"result":{"count":1}}`, http.StatusOK), nil
 	})}
 	wrapper := &KrakenWrapper{api: krakenapi.NewWithClient("key", "secret", client)}
-	if err := wrapper.CancelOrder(nil, "[transaction-id]"); err != nil {
+	if err := wrapper.CancelOrder(nil, "[OABC23-DEF45-GHI789]"); err != nil {
 		t.Fatal(err)
 	}
 	count = 0
-	if err := wrapper.CancelOrder(nil, "transaction-id"); err == nil {
+	if err := wrapper.CancelOrder(nil, "OABC23-DEF45-GHI789"); err == nil {
 		t.Fatal("expected zero canceled orders to fail")
 	}
-	for _, id := range []string{"", "[]", "[one two]", "one,two"} {
+	for _, id := range []string{"", "[]", "[one two]", "one,two", "123", "-42", "OABC23-DEF45-GHI789,OABC23-DEF45-GHI780"} {
 		if err := wrapper.CancelOrder(nil, id); err == nil {
 			t.Errorf("expected invalid ID %q to fail", id)
 		}
 	}
 }
 
-func TestKucoinCancelOrder(t *testing.T) {
-	side := ""
-	client := http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		switch {
-		case strings.HasSuffix(req.URL.Path, "/market/open/coins-trending"):
-			return jsonResponse(`{"success":true,"data":[{"coinPair":"ETH-BTC"}]}`, http.StatusOK), nil
-		case strings.HasSuffix(req.URL.Path, "/order/active-map"):
-			if req.URL.Query().Get("symbol") != "ETH-BTC" {
-				t.Errorf("unexpected market: %s", req.URL.RawQuery)
-			}
-			return jsonResponse(`{"success":true,"data":{"BUY":[{"oid":"buy-id"}],"SELL":[{"oid":"sell-id"}]}}`, http.StatusOK), nil
-		case strings.HasSuffix(req.URL.Path, "/cancel-order"):
-			if err := req.ParseForm(); err != nil {
-				t.Fatal(err)
-			}
-			side = req.Form.Get("type")
-			if req.Form.Get("symbol") != "ETH-BTC" || req.Form.Get("orderOid") != strings.ToLower(side)+"-id" {
-				t.Errorf("unexpected cancellation parameters: %v", req.Form)
-			}
-			return jsonResponse(`{"success":true}`, http.StatusOK), nil
-		default:
-			t.Fatalf("unexpected request: %s", req.URL)
-			return nil, nil
-		}
-	})}
-	wrapper := &KucoinWrapper{api: kucoin.NewCustomClient("key", "secret", client)}
-	market := &environment.Market{ExchangeNames: map[string]string{"kucoin": "ETH-BTC"}}
-	for _, want := range []string{"BUY", "SELL"} {
-		if err := wrapper.CancelOrder(market, strings.ToLower(want)+"-id"); err != nil {
-			t.Fatal(err)
-		}
-		if side != want {
-			t.Errorf("got side %q, want %q", side, want)
-		}
-	}
-	side = ""
-	if err := wrapper.CancelOrder(market, "missing"); err == nil || side != "" {
-		t.Fatal("unknown order should not be canceled")
-	}
-}
-
 func TestCancelOrderUnavailableAndInvalid(t *testing.T) {
-	for _, wrapper := range []ExchangeWrapper{&HitBtcWrapperV2{}, &BittrexWrapperV2{}} {
+	for _, wrapper := range []ExchangeWrapper{&HitBtcWrapperV2{}, &BittrexWrapperV2{}, &KucoinWrapper{}} {
 		if err := wrapper.CancelOrder(nil, "order"); !errors.Is(err, ErrCancelOrderNotSupported) {
 			t.Errorf("%T: expected unsupported error, got %v", wrapper, err)
 		}
