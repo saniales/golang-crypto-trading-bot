@@ -24,6 +24,7 @@ import (
 	helpers "github.com/saniales/golang-crypto-trading-bot/bot_helpers"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
+	"github.com/saniales/golang-crypto-trading-bot/logging"
 	"github.com/saniales/golang-crypto-trading-bot/strategies"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -65,6 +66,7 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 	fmt.Print("Getting configurations ... ")
 	if err := initConfigs(); err != nil {
 		fmt.Println("Cannot read from configuration file, please create or replace the current one using gobot init")
+		logging.Error("Cannot load bot configuration", "error", err)
 		return
 	}
 	fmt.Println("DONE")
@@ -98,12 +100,15 @@ func executeStartCommand(cmd *cobra.Command, args []string) {
 		err := strategies.MatchWithMarkets(strategyConf.Strategy, mkts)
 		if err != nil {
 			fmt.Println("Cannot add tactic : ", err)
+			logging.Error("Cannot add tactic", "error", err)
 		}
 	}
 	fmt.Println("DONE")
 
 	fmt.Println("Starting bot ... ")
+	logging.Info("Starting bot")
 	executeBotLoop(wrappers)
+	logging.Info("Bot stopped")
 	fmt.Println("EXIT, good bye :)")
 }
 

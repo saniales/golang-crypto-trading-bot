@@ -11,6 +11,7 @@ import (
 
 	bitfinex "github.com/bitfinexcom/bitfinex-api-go/v1"
 	"github.com/saniales/golang-crypto-trading-bot/environment"
+	"github.com/saniales/golang-crypto-trading-bot/logging"
 )
 
 // BitfinexWrapper provides a Generic wrapper of the Bitfinex API.
@@ -243,7 +244,7 @@ func (wrapper *BitfinexWrapper) GetDepositAddress(coinTicker string) (string, bo
 
 // CalculateTradingFees calculates the trading fees for an order on a specified market.
 //
-//     NOTE: In Bitfinex fees are currently hardcoded.
+//	NOTE: In Bitfinex fees are currently hardcoded.
 func (wrapper *BitfinexWrapper) CalculateTradingFees(market *environment.Market, amount float64, limit float64, orderType TradeType) float64 {
 	var feePercentage float64
 	if orderType == MakerTrade {
@@ -266,7 +267,7 @@ func (wrapper *BitfinexWrapper) CalculateWithdrawFees(market *environment.Market
 func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error {
 	err := wrapper.api.WebSocket.Connect()
 	if err != nil {
-		fmt.Println(err)
+		logging.Error("Bitfinex websocket connection failed", "error", err)
 	}
 
 	bookMap := make(map[string]chan []float64)
@@ -285,7 +286,7 @@ func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error
 		for {
 			err = wrapper.api.WebSocket.Subscribe()
 			if err != nil {
-				fmt.Println(err)
+				logging.Error("Bitfinex websocket subscription failed", "error", err)
 			}
 
 			wrapper.api.WebSocket.Close()
@@ -299,7 +300,7 @@ func (wrapper *BitfinexWrapper) FeedConnect(markets []*environment.Market) error
 			for err != nil {
 				err = wrapper.api.WebSocket.Connect()
 				if err != nil {
-					fmt.Println(err)
+					logging.Error("Bitfinex websocket connection failed", "error", err)
 				}
 			}
 			wrapper.api.WebSocket.ClearSubscriptions()

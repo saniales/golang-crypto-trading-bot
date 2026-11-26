@@ -21,6 +21,7 @@ import (
 
 	"github.com/saniales/golang-crypto-trading-bot/environment"
 	"github.com/saniales/golang-crypto-trading-bot/exchanges"
+	"github.com/saniales/golang-crypto-trading-bot/logging"
 )
 
 // IntervalStrategy is an interval based strategy.
@@ -50,6 +51,9 @@ func (is IntervalStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets [
 
 	if hasSetupFunc {
 		err = is.Model.Setup(wrappers, markets)
+		if err != nil {
+			logging.Error("Strategy setup failed", "strategy", is.Name(), "error", err)
+		}
 		if err != nil && hasErrorFunc {
 			is.Model.OnError(err)
 		}
@@ -57,6 +61,7 @@ func (is IntervalStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets [
 
 	if !hasUpdateFunc {
 		_err := errors.New("OnUpdate func cannot be empty")
+		logging.Error("Strategy update unavailable", "strategy", is.Name(), "error", _err)
 		if hasErrorFunc {
 			is.Model.OnError(_err)
 		} else {
@@ -65,6 +70,9 @@ func (is IntervalStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets [
 	}
 	for err == nil {
 		err = is.Model.OnUpdate(wrappers, markets)
+		if err != nil {
+			logging.Error("Strategy update failed", "strategy", is.Name(), "error", err)
+		}
 		if err != nil && hasErrorFunc {
 			is.Model.OnError(err)
 		}
@@ -72,6 +80,9 @@ func (is IntervalStrategy) Apply(wrappers []exchanges.ExchangeWrapper, markets [
 	}
 	if hasTearDownFunc {
 		err = is.Model.TearDown(wrappers, markets)
+		if err != nil {
+			logging.Error("Strategy teardown failed", "strategy", is.Name(), "error", err)
+		}
 		if err != nil && hasErrorFunc {
 			is.Model.OnError(err)
 		}
